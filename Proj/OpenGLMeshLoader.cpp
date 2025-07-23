@@ -36,6 +36,10 @@ void handleKeyboard(unsigned char key, int x, int y) {
     case 's': case 'S': player.z += moveSpeed; break;
     case 'a': case 'A': player.x -= moveSpeed; break;
     case 'd': case 'D': player.x += moveSpeed; break;
+    case 'l': case 'L':
+        currentLevel = LEVEL2; // Instantly switch to Level 2
+        
+        break;
     case 27:  ::exit(EXIT_SUCCESS); break; // ESC
     }
 }
@@ -137,8 +141,33 @@ void updateLevel2Logic() {
 
 // === LIGHTING ===
 void updateLighting() {
-    // dynamic lighting here
+    glEnable(GL_LIGHT1);
+
+    // The light's position is correct.
+    GLfloat light_pos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
+    glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
+
+    // --- THE CORRECTED DIRECTION ---
+    // To make it look like a headlight beam on the ground, we need to define a
+    // direction vector that points from the light's position (the car)
+    // towards a spot on the ground in front of the car.
+    //
+    // Let's aim for a spot 10 units in front of the car and on the ground (y=0).
+    // Vector = Destination - Source
+    // Vector = (player.x, 0, player.z - 10) - (player.x, player.y + 0.5, player.z)
+    //
+    // This simplifies to:
+    GLfloat light_dir[] = { 0.0f, -0.5f, -10.0f };
+
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir);
+
+    // --- Use the focused spotlight settings ---
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);   // A tight cone (50-degree total angle)
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f); // A sharp, focused hotspot
 }
+
+
+
 
 // === SOUND ===
 void playSound(const std::string& type) {
@@ -150,7 +179,7 @@ void display() {
     glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
-
+    updateLighting();
     updateCamera();
     if (currentLevel == LEVEL1) drawLevel1();
     else drawLevel2();

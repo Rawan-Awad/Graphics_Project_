@@ -14,59 +14,65 @@ Model_3DS model_coin;
 
 void initLevel2() {
     // Load desert scene, finish line, obstacles
-    model_car.Load("models/car/_Subaru-Loyale.3ds");         // Car model (if different from Level 1)
-    model_sign.Load("models/sign/StopSign.3ds");      // Road sign obstacle
-    model_rock.Load("models/rock/Stone 4.3DS");
-    model_desert.Load("models/desert/uploads_files_4614960_Deasert+sell.3ds");
-    model_flag.Load("models/flag/lp_flag3ds.3DS");
-    model_coin.Load("models/flag/uploads_files_4153932_Cartoon_Coin01_3ds.3ds");
+    model_car.Load("Models/car/_Subaru-Loyale.3ds");         // Car model (if different from Level 1)
+    model_sign.Load("Models/StopSign/StopSign.3ds");      // Road sign obstacle
+    model_rock.Load("Models/rock/Stone 4.3DS");
+    model_desert.Load("Models/desert/uploads_files_4614960_Deasert+sell.3ds");
+    model_flag.Load("Models/flag/lp_flag3ds.3DS");
+    model_coin.Load("Models/coin/uploads_files_4153932_Cartoon_Coin01_3ds.3ds");
 }
 
 void drawLevel2() {
     // === Draw Desert Terrain ===
     glPushMatrix();
-    glTranslatef(0.0f, -1.0f, 0.0f);  // Position ground
-    glScalef(5.0f, 5.0f, 5.0f);       // Make it large enough
+    glScalef(5.0f, 5.0f, 5.0f);
+    glTranslatef(0.0f, -20.0f, 0.0f);
     model_desert.Draw();
     glPopMatrix();
 
     // === Draw Player Car ===
     glPushMatrix();
-    glTranslatef(player.x, player.y, player.z);  // Place at player's position
-    glScalef(0.1f, 0.1f, 0.1f);                  // Scale car to fit the scene
+    glTranslatef(player.x, player.y + 0.5f, player.z);
+    // Increase the car's scale to make it visible and proportional to the scene.
+    // Let's try making it 5 times bigger than it was before.
+    glScalef(1.0f, 1.0f, 1.0f); // CHANGED FROM 0.1 to 0.5
     model_car.Draw();
     glPopMatrix();
 
     // === Draw Coin (if not collected) ===
     if (!collected) {
         glPushMatrix();
-        glTranslatef(collectibleX, 0.0f, collectibleZ);  // Fixed position
-        glScalef(0.05f, 0.05f, 0.05f);
+        glTranslatef(collectibleX, 1.0f, collectibleZ);
+        glScalef(0.5f, 0.5f, 0.5f);
         model_coin.Draw();
         glPopMatrix();
     }
 
     // === Draw Rock Obstacle ===
     glPushMatrix();
-    glTranslatef(obstacleX, 0.0f, obstacleZ);
-    glScalef(0.1f, 0.1f, 0.1f);
+    glTranslatef(obstacleX, 0.5f, obstacleZ);
+    glScalef(0.5f, 0.5f, 0.5f);
     model_rock.Draw();
     glPopMatrix();
 
     // === Draw Road Sign ===
     glPushMatrix();
-    glTranslatef(obstacleX + 5.0f, 0.0f, obstacleZ - 5.0f);  // Offset position
-    glScalef(0.1f, 0.1f, 0.1f);
+    glTranslatef(obstacleX + 5.0f, 0.5f, obstacleZ - 5.0f);
+    glScalef(0.5f, 0.5f, 0.5f);
     model_sign.Draw();
     glPopMatrix();
 
     // === Draw Finish Line Flag ===
     glPushMatrix();
-    glTranslatef(0.0f, 0.0f, -50.0f);  // Place it at the far end
-    glScalef(0.3f, 0.3f, 0.3f);
+   
+    glScalef(0.5f, 0.5f, 0.5f);
     model_flag.Draw();
     glPopMatrix();
 }
+
+
+
+
 
 
 void animateLevel2Objects() {
@@ -108,8 +114,10 @@ void initLighting() {
     glEnable(GL_LIGHT0);  // Use LIGHT0 for the sun
 
     GLfloat ambientSun[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    GLfloat diffuseSun[] = { 1.0f, 1.0f, 0.8f, 1.0f };
-    GLfloat specularSun[] = { 1.0f, 1.0f, 0.8f, 1.0f };
+    GLfloat diffuseSun[] = { 0.5f, 0.5f, 0.45f, 1.0f }; // CHANGED from 0.8 to 0.5
+
+    // Reduce the specular highlight intensity as well.
+    GLfloat specularSun[] = { 0.4f, 0.4f, 0.4f, 1.0f }; // CHANGED from 0.7 to 0.4
     GLfloat positionSun[] = { 0.0f, 100.0f, 0.0f, 0.0f }; // Directional light
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientSun);
@@ -120,9 +128,11 @@ void initLighting() {
     // === Headlights ===
     glEnable(GL_LIGHT1);  // Use LIGHT1 for headlights
 
-    GLfloat ambientHL[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-    GLfloat diffuseHL[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    GLfloat specularHL[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    GLfloat ambientHL[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // No ambient from headlights
+    // Make the diffuse component very bright for the test
+    GLfloat diffuseHL[] = { 1.0f, 1.0f, 0.8f, 1.0f }; // VERY BRIGHT
+    GLfloat specularHL[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // BRIGHT HIGHLIGHT
+
 
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientHL);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseHL);
