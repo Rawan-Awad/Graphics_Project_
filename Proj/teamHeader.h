@@ -6,7 +6,7 @@
 #include <glut.h>
 
 // === ENUM FOR GAME LEVEL ===
-enum GameLevel { LEVEL1, LEVEL2 };
+enum GameLevel { LEVEL1, LEVEL2, GAMEOVER};
 extern GameLevel currentLevel;
 extern float collectibleX, collectibleZ;
 extern bool collected;
@@ -36,6 +36,7 @@ void updateLevel2Logic();
 void updateLighting();
 void playSound(const std::string& type);
 void initGame();
+void drawGameOverScreen();
 
 // === TEAM 2 - LEVEL 1 ===
 void initLevel1();

@@ -38,7 +38,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
     case 'd': case 'D': player.x += moveSpeed; break;
     case 'l': case 'L':
         currentLevel = LEVEL2; // Instantly switch to Level 2
-        
+        player.stamina = 100;
         break;
     case 27:  ::exit(EXIT_SUCCESS); break; // ESC
     }
@@ -136,8 +136,90 @@ void updateLevel1Logic() {
 
 
 void updateLevel2Logic() {
-    // coin pickup, stamina loss, win check
+    // --- 1. Continuous Stamina Decrease ---
+    // Requirement: "The player has to move through the dessert and tries to survive till he reaches the target."
+    // This implies a constant challenge, so we'll decrease stamina over time.
+    player.stamina -= 0.05f; // Decrease stamina by a small amount each frame. Adjust this value to make it faster/slower.
+
+    // --- 2. Check for Game Over Condition ---
+    if (player.stamina <= 0) {
+        currentLevel = GAMEOVER; // Change the game state.
+        return; // Stop processing the rest of the level logic for this frame.
+    }
+
+    // --- 3. Coin Collection Logic ---
+    if (!collected) {
+        float dx_coin = player.x - collectibleX;
+        float dz_coin = player.z - collectibleZ;
+        if (sqrt(dx_coin * dx_coin + dz_coin * dz_coin) < 2.0f) {
+            player.score += 10;
+            collected = true;
+            // A potential game mechanic: collecting a coin could restore a bit of stamina.
+            // player.stamina += 20.0f; 
+        }
+    }
+
+    // --- 4. Obstacle Collision Logic ---
+    // Colliding with obstacles will now cause a larger, immediate drop in stamina.
+    float dx_obstacle = player.x - obstacleX;
+    float dz_obstacle = player.z - obstacleZ;
+    if (sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle) < 2.0f) {
+        player.stamina -= 15.0f; // A significant penalty for hitting an obstacle.
+        player.x -= (dx_obstacle / sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle)) * 0.5f;
+        player.z -= (dz_obstacle / sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle)) * 0.5f;
+    }
+
+    // --- 5. Win Condition ---
+    if (player.z < -49.0f) {
+        MessageBoxA(NULL, "You reached the finish line!", "Level 2 Complete!", MB_OK);
+        ::exit(EXIT_SUCCESS);
+    }
 }
+// Add this new function anywhere in your main OpenGLMeshLoader.cpp file.
+void drawGameOverScreen() {
+    // Switch to 2D orthographic projection to draw text.
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 600, 0); // Using 800x600 window size. Top-left is (0,0).
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Disable 3D features like lighting and depth testing.
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    // Draw a semi-transparent black background to dim the scene.
+    glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+    glBegin(GL_QUADS);
+    glVertex2i(0, 0);
+    glVertex2i(800, 0);
+    glVertex2i(800, 600);
+    glVertex2i(0, 600);
+    glEnd();
+
+    // Draw the "GAME OVER" text in the center of the screen.
+    glColor3f(1.0f, 0.0f, 0.0f); // Red color for the text.
+    glRasterPos2i(350, 300); // Position the text.
+    const char* message = "GAME OVER";
+    for (const char* c = message; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+    }
+
+    // Re-enable features before exiting the function.
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+
+    // Restore the previous matrices.
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+
 
 // === LIGHTING ===
 void updateLighting() {
@@ -147,11 +229,8 @@ void updateLighting() {
     GLfloat light_pos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
     glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
 
-
     GLfloat light_dir[] = { 0.0f, -0.5f, -10.0f };
-
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir);
-
 
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);
@@ -174,6 +253,9 @@ void display() {
     updateCamera();
     if (currentLevel == LEVEL1) drawLevel1();
     else drawLevel2();
+    if (currentLevel == GAMEOVER) {
+        drawGameOverScreen();
+    }
 
     drawHUD();
     glutSwapBuffers();
@@ -181,14 +263,17 @@ void display() {
 
 // === TIMER ===
 void timer(int value) {
-    if (currentLevel == LEVEL1) {
-        updateLevel1Logic();     // T1 - logic
-        animateLevel1Objects();  // T2 - animation
+    if (currentLevel != GAMEOVER) {
+        if (currentLevel == LEVEL1) {
+            updateLevel1Logic();     // T1 - logic
+            animateLevel1Objects();  // T2 - animation
+        }
+        else {
+            updateLevel2Logic();     // T1 - logic
+            animateLevel2Objects();  // T3 - animation
+        }
     }
-    else {
-        updateLevel2Logic();     // T1 - logic
-        animateLevel2Objects();  // T3 - animation
-    }
+    
 
     updateLighting(); // T3 - lighting
     glutPostRedisplay();
