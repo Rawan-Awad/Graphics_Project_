@@ -1,12 +1,10 @@
-﻿  level2.cpp
-  OpenGLMeshLoader.cpp
+﻿  OpenGLMeshLoader.cpp
 C:\Users\roroh\source\repos\Graphics_Project_\Proj\TextureBuilder.h(27,52): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
   (compiling source file 'OpenGLMeshLoader.cpp')
   
 C:\Users\roroh\source\repos\Graphics_Project_\Proj\TextureBuilder.h(28,52): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
   (compiling source file 'OpenGLMeshLoader.cpp')
   
-  Generating Code...
 GLTexture.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/INCREMENTAL:NO' specification
 level2.obj : error LNK2005: "void __cdecl loadBMP(unsigned int *,char *,int)" (?loadBMP@@YAXPAIPADH@Z) already defined in level1.obj
 level2.obj : error LNK2005: "void __cdecl loadPPM(unsigned int *,char *,int,int,int)" (?loadPPM@@YAXPAIPADHHH@Z) already defined in level1.obj

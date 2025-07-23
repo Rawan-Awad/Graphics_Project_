@@ -1,5 +1,5 @@
 #include "TextureBuilder.h"
-#include "teamHeader.h"
+//#include "teamHeader.h"
 #include <glew.h>
 #include "Model_3DS.h"
 #include "GLTexture.h"
