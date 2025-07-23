@@ -8,6 +8,9 @@
 // === ENUM FOR GAME LEVEL ===
 enum GameLevel { LEVEL1, LEVEL2 };
 extern GameLevel currentLevel;
+extern float collectibleX, collectibleZ;
+extern bool collected;
+extern float obstacleX, obstacleZ;
 
 // === PLAYER STRUCT ===
 struct Player {
