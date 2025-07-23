@@ -147,23 +147,14 @@ void updateLighting() {
     GLfloat light_pos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
     glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
 
-    // --- THE CORRECTED DIRECTION ---
-    // To make it look like a headlight beam on the ground, we need to define a
-    // direction vector that points from the light's position (the car)
-    // towards a spot on the ground in front of the car.
-    //
-    // Let's aim for a spot 10 units in front of the car and on the ground (y=0).
-    // Vector = Destination - Source
-    // Vector = (player.x, 0, player.z - 10) - (player.x, player.y + 0.5, player.z)
-    //
-    // This simplifies to:
+
     GLfloat light_dir[] = { 0.0f, -0.5f, -10.0f };
 
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir);
 
-    // --- Use the focused spotlight settings ---
-    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);   // A tight cone (50-degree total angle)
-    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f); // A sharp, focused hotspot
+
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);
 }
 
 
