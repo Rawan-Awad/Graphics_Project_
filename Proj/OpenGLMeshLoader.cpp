@@ -48,24 +48,26 @@ void initGame() {
 // === INPUT ===
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case 'w': case 'W':  // Move FORWARD (North)
-        playerAngle = 0.0f;
-        player.z -= moveSpeed;
+    case 'w': case 'W':
+        player.x += moveSpeed * cos(playerAngle * M_PI / 180.0f);
+        player.z += moveSpeed * sin(playerAngle * M_PI / 180.0f);
         break;
 
-    case 's': case 'S':  // Move BACKWARD (South)
-        playerAngle = 180.0f;
-        player.z += moveSpeed;
+    case 's': case 'S':
+        player.x -= moveSpeed * cos(playerAngle * M_PI / 180.0f);
+        player.z -= moveSpeed * sin(playerAngle * M_PI / 180.0f);
         break;
 
-    case 'a': case 'A':  // Move LEFT (West)
-        playerAngle = 90.0f;
-        player.x -= moveSpeed;
+    case 'a': case 'A':
+        // Rotate LEFT
+        playerAngle += 90.0f;
+        if (playerAngle >= 360.0f) playerAngle -= 360.0f;
         break;
 
-    case 'd': case 'D':  // Move RIGHT (East)
-        playerAngle = 270.0f;
-        player.x += moveSpeed;
+    case 'd': case 'D':
+        // Rotate RIGHT
+        playerAngle -= 90.0f;
+        if (playerAngle < 0.0f) playerAngle += 360.0f;
         break;
 
     case 'l': case 'L':
@@ -73,16 +75,16 @@ void handleKeyboard(unsigned char key, int x, int y) {
         player.stamina = 100;
         break;
 
-    case 27: ::exit(EXIT_SUCCESS); break;
+    case 27:
+        ::exit(EXIT_SUCCESS);
+        break;
     }
 
-    // Play car move sound only once
     if (!carSoundPlaying) {
         playSound("car_move");
         carSoundPlaying = true;
     }
 }
-
 
 
 
@@ -318,7 +320,7 @@ void updateLighting() {
     GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 
-    // === Headlight ===
+    // === Headlights ===
     glEnable(GL_LIGHT1);
 
     GLfloat lightPos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
@@ -333,7 +335,6 @@ void updateLighting() {
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);
 }
-
 
 
 
@@ -395,7 +396,7 @@ void timer(int value) {
             animateLevel2Objects();  // T3 - animation
         }
     }
-    
+
 
     updateLighting(); // T3 - lighting
     glutPostRedisplay();
