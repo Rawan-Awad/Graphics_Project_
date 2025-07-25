@@ -5,6 +5,8 @@
 #include <string> 
 #include <cmath>       
 #include <algorithm> 
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
 #undef exit
 using namespace std;
 
@@ -13,7 +15,15 @@ Player player = { 0.0f, 0.0f, 0.0f, 0.0f, 0, false };
 float moveSpeed = 0.5f;
 bool isFirstPerson = false;
 GameLevel currentLevel = LEVEL1;
+float sunIntensity = 0.5f;
+bool carSoundPlaying = false;
 //fake collectibles
+float foodX = 10.0f;
+float foodZ = -5.0f;
+float drinkX = 12.0f;
+float drinkZ = -8.0f;
+bool foodCollected = false;
+bool drinkCollected = false;
 float collectibleX = 10.0f;
 float collectibleZ = -5.0f;
 bool collected = false;
@@ -27,22 +37,39 @@ void initGame() {
     initLevel2();     // Team 3
     initSounds();     // Team 2
     initLighting();   // Team 3
+    glEnable(GL_LIGHTING);
+    glEnable(GL_COLOR_MATERIAL);//allows gl color to affect material
 }
 
 // === INPUT ===
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case 'w': case 'W': player.z -= moveSpeed; break;
-    case 's': case 'S': player.z += moveSpeed; break;
-    case 'a': case 'A': player.x -= moveSpeed; break;
-    case 'd': case 'D': player.x += moveSpeed; break;
+    case 'w': case 'W':
+    case 's': case 'S':
+    case 'a': case 'A':
+    case 'd': case 'D':
+        // Movement logic
+        if (key == 'w' || key == 'W') player.z -= moveSpeed;
+        if (key == 's' || key == 'S') player.z += moveSpeed;
+        if (key == 'a' || key == 'A') player.x -= moveSpeed;
+        if (key == 'd' || key == 'D') player.x += moveSpeed;
+
+        // Start car movement sound (once)
+        if (!carSoundPlaying) {
+            playSound("car_move");
+            carSoundPlaying = true;
+        }
+        break;
+
     case 'l': case 'L':
-        currentLevel = LEVEL2; // Instantly switch to Level 2
+        currentLevel = LEVEL2;
         player.stamina = 100;
         break;
+
     case 27:  ::exit(EXIT_SUCCESS); break; // ESC
     }
 }
+
 
 void handleMouse(int button, int state, int x, int y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
@@ -102,37 +129,54 @@ void reshape(int w, int h) {
 
 // === LOGIC ===
 void updateLevel1Logic() {
-    // collision, pickups, stamina, level switch
-    //using fake collectibles
-    if (!collected) {
-        float dx1 = player.x - collectibleX;
-        float dz1 = player.z - collectibleZ;
-        float dist1 = sqrt(dx1 * dx1 + dz1 * dz1);
-        if (dist1 < 2.0f) {
+    // === FOOD COLLECTION === 
+    if (!foodCollected) {
+        float dx = player.x - foodX;
+        float dz = player.z - foodZ;
+        float dist = sqrt(dx * dx + dz * dz);
+        if (dist < 2.0f) {
             player.stamina = min(player.stamina + 10, 100.0f);
-            player.score += 5;
-            collected = true;
+            playSound("chew");
+            foodCollected = true;
         }
     }
-    //obstacle logic
+
+    // === DRINK COLLECTION ===
+    if (!drinkCollected) {
+        float dx = player.x - drinkX;
+        float dz = player.z - drinkZ;
+        float dist = sqrt(dx * dx + dz * dz);
+        if (dist < 2.0f) {
+            player.stamina = min(player.stamina + 15, 100.0f);
+            playSound("drink");
+            drinkCollected = true;
+        }
+    }
+
     float dx2 = player.x - obstacleX;
     float dz2 = player.z - obstacleZ;
     float dist2 = sqrt(dx2 * dx2 + dz2 * dz2);
     if (dist2 < 2.0f) {
         player.stamina -= 1.0f;
+        playSound("car_crash");
         if (player.stamina <= 0) {
             player.x = 0;
             player.z = 0;
             player.stamina = 100;
         }
     }
-    //switching level
+
+
+
+    // === LEVEL TRANSITION ===
     if (player.x > 30.0f) {
         currentLevel = LEVEL2;
         player.x = 0;
         player.z = 0;
+        playSound("levelup");  // Optional: add level transition sound
     }
 }
+
 
 
 void updateLevel2Logic() {
@@ -154,6 +198,7 @@ void updateLevel2Logic() {
         if (sqrt(dx_coin * dx_coin + dz_coin * dz_coin) < 2.0f) {
             player.score += 10;
             collected = true;
+            playSound("collect_coin");
             // A potential game mechanic: collecting a coin could restore a bit of stamina.
             // player.stamina += 20.0f; 
         }
@@ -164,13 +209,16 @@ void updateLevel2Logic() {
     float dx_obstacle = player.x - obstacleX;
     float dz_obstacle = player.z - obstacleZ;
     if (sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle) < 2.0f) {
-        player.stamina -= 15.0f; // A significant penalty for hitting an obstacle.
+        player.stamina -= 15.0f;
+        playSound("car_crash");
         player.x -= (dx_obstacle / sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle)) * 0.5f;
         player.z -= (dz_obstacle / sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle)) * 0.5f;
     }
 
+
     // --- 5. Win Condition ---
     if (player.z < -49.0f) {
+        playSound("cheer"); // Play cheering sound
         MessageBoxA(NULL, "You reached the finish line!", "Level 2 Complete!", MB_OK);
         ::exit(EXIT_SUCCESS);
     }
@@ -208,6 +256,13 @@ void drawGameOverScreen() {
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
     }
 
+    // === Draw "Final Score" Text ===
+    std::string scoreMsg = "Final Score: " + std::to_string(player.score);
+    glRasterPos2i(330, 340); // Positioned above the GAME OVER text
+    for (char c : scoreMsg) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
+
     // Re-enable features before exiting the function.
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
@@ -223,9 +278,21 @@ void drawGameOverScreen() {
 
 // === LIGHTING ===
 void updateLighting() {
+    //sunlight
+    glEnable(GL_LIGHT0);
+
+    //simulate sunlight intensity over time(sine wave)
+    float sunIntensity = 0.5f + 0.5f * sin(glutGet(GLUT_ELAPSED_TIME) * 0.001f);
+    GLfloat diffuseSun[] = { sunIntensity,sunIntensity,sunIntensity,1.0f };
+    GLfloat sunDir[] = { -0.3f,-1.0f,-0.5f,0.0f };//directional sunlight
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseSun);
+    glLightfv(GL_LIGHT0, GL_POSITION, sunDir);
+    GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+
+
     glEnable(GL_LIGHT1);
 
-    // The light's position is correct.
     GLfloat light_pos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
     glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
 
@@ -233,7 +300,7 @@ void updateLighting() {
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir);
 
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
-    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);;
 }
 
 
@@ -241,7 +308,27 @@ void updateLighting() {
 
 // === SOUND ===
 void playSound(const std::string& type) {
-    // play sfx by keyword
+    if (type == "chew") {
+        PlaySound(TEXT("chew.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    }
+    else if (type == "drink") {
+        PlaySound(TEXT("drink.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    }
+    else if (type == "collect_coin") {
+        PlaySound(TEXT("coin_collect.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    }
+    else if (type == "car_crash") {
+        PlaySound(TEXT("car_crash.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    }
+    else if (type == "car_move") {
+        PlaySound(TEXT("car_move.wav"), NULL, SND_LOOP | SND_ASYNC);
+    }
+    else if (type == "levelup") {
+        PlaySound(TEXT("level_up.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    }
+    else if (type == "win") {
+        PlaySound(TEXT("cheer.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    }
 }
 
 // === DISPLAY ===
