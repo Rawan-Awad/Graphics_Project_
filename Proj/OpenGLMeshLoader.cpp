@@ -278,30 +278,43 @@ void drawGameOverScreen() {
 
 // === LIGHTING ===
 void updateLighting() {
-    //sunlight
+    // === Sunlight ===
     glEnable(GL_LIGHT0);
 
-    //simulate sunlight intensity over time(sine wave)
     float sunIntensity = 0.5f + 0.5f * sin(glutGet(GLUT_ELAPSED_TIME) * 0.001f);
-    GLfloat diffuseSun[] = { sunIntensity,sunIntensity,sunIntensity,1.0f };
-    GLfloat sunDir[] = { -0.3f,-1.0f,-0.5f,0.0f };//directional sunlight
+    GLfloat diffuseSun[] = { sunIntensity, sunIntensity, sunIntensity, 1.0f };
+    GLfloat sunDir[] = { -0.3f, -1.0f, -0.5f, 0.0f }; // Directional
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseSun);
     glLightfv(GL_LIGHT0, GL_POSITION, sunDir);
     GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 
-
+    // === Headlight (Spotlight following camera/player) ===
     glEnable(GL_LIGHT1);
 
-    GLfloat light_pos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
-    glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
+    // Position of the light: from player's position
+    GLfloat lightPos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
+    glLightfv(GL_LIGHT1, GL_POSITION, lightPos);
 
-    GLfloat light_dir[] = { 0.0f, -0.5f, -10.0f };
-    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir);
-
+    // Direction depends on camera mode
+    GLfloat lightDir[3];
+    if (isFirstPerson) {
+        // Headlight shines forward (Z-) in first-person
+        lightDir[0] = 0.0f;
+        lightDir[1] = -0.2f; // slight downward tilt
+        lightDir[2] = -1.0f;
+    }
+    else {
+        // In third-person, you may want it to point a bit lower or adjust
+        lightDir[0] = 0.0f;
+        lightDir[1] = -0.5f;
+        lightDir[2] = -1.0f;
+    }
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, lightDir);
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
-    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);;
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);
 }
+
 
 
 
