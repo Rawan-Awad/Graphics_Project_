@@ -8,6 +8,9 @@
 #include <mmsystem.h>
 #pragma comment(lib, "winmm.lib")
 #undef exit
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 using namespace std;
 
 // === GLOBAL DEFINITIONS ===
@@ -17,6 +20,7 @@ bool isFirstPerson = false;
 GameLevel currentLevel = LEVEL1;
 float sunIntensity = 0.5f;
 bool carSoundPlaying = false;
+float playerAngle = 0.0f;
 //fake collectibles
 float foodX = 10.0f;
 float foodZ = -5.0f;
@@ -44,21 +48,24 @@ void initGame() {
 // === INPUT ===
 void handleKeyboard(unsigned char key, int x, int y) {
     switch (key) {
-    case 'w': case 'W':
-    case 's': case 'S':
-    case 'a': case 'A':
-    case 'd': case 'D':
-        // Movement logic
-        if (key == 'w' || key == 'W') player.z -= moveSpeed;
-        if (key == 's' || key == 'S') player.z += moveSpeed;
-        if (key == 'a' || key == 'A') player.x -= moveSpeed;
-        if (key == 'd' || key == 'D') player.x += moveSpeed;
+    case 'w': case 'W':  // Move FORWARD (North)
+        playerAngle = 0.0f;
+        player.z -= moveSpeed;
+        break;
 
-        // Start car movement sound (once)
-        if (!carSoundPlaying) {
-            playSound("car_move");
-            carSoundPlaying = true;
-        }
+    case 's': case 'S':  // Move BACKWARD (South)
+        playerAngle = 180.0f;
+        player.z += moveSpeed;
+        break;
+
+    case 'a': case 'A':  // Move LEFT (West)
+        playerAngle = 90.0f;
+        player.x -= moveSpeed;
+        break;
+
+    case 'd': case 'D':  // Move RIGHT (East)
+        playerAngle = 270.0f;
+        player.x += moveSpeed;
         break;
 
     case 'l': case 'L':
@@ -66,9 +73,19 @@ void handleKeyboard(unsigned char key, int x, int y) {
         player.stamina = 100;
         break;
 
-    case 27:  ::exit(EXIT_SUCCESS); break; // ESC
+    case 27: ::exit(EXIT_SUCCESS); break;
+    }
+
+    // Play car move sound only once
+    if (!carSoundPlaying) {
+        playSound("car_move");
+        carSoundPlaying = true;
     }
 }
+
+
+
+
 
 
 void handleMouse(int button, int state, int x, int y) {
@@ -83,17 +100,30 @@ void toggleCameraView() {
 
 // === CAMERA ===
 void updateCamera() {
+    float rad = playerAngle * M_PI / 180.0f;
+
+    float eyeX, eyeY, eyeZ;
+    float centerX, centerY, centerZ;
+
+    eyeX = player.x;
+    eyeY = player.y + 1.0f;
+    eyeZ = player.z;
+
+    centerX = player.x + cos(rad);
+    centerY = eyeY;
+    centerZ = player.z + sin(rad);
+
     if (isFirstPerson) {
-        gluLookAt(player.x, player.y + 1.0f, player.z,
-            player.x, player.y + 1.0f, player.z - 5,
-            0.0f, 1.0f, 0.0f);
+        gluLookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, 0.0f, 1.0f, 0.0f);
     }
     else {
-        gluLookAt(player.x, player.y + 5.0f, player.z + 10.0f,
-            player.x, player.y, player.z,
-            0.0f, 1.0f, 0.0f);
+        float behindX = player.x - 6.0f * cos(rad);
+        float behindZ = player.z - 6.0f * sin(rad);
+        gluLookAt(behindX, eyeY + 3.0f, behindZ, player.x, eyeY, player.z, 0.0f, 1.0f, 0.0f);
     }
 }
+
+
 
 // === HUD ===
 void drawHUD() {
@@ -280,40 +310,32 @@ void drawGameOverScreen() {
 void updateLighting() {
     // === Sunlight ===
     glEnable(GL_LIGHT0);
-
     float sunIntensity = 0.5f + 0.5f * sin(glutGet(GLUT_ELAPSED_TIME) * 0.001f);
     GLfloat diffuseSun[] = { sunIntensity, sunIntensity, sunIntensity, 1.0f };
-    GLfloat sunDir[] = { -0.3f, -1.0f, -0.5f, 0.0f }; // Directional
+    GLfloat sunDir[] = { -0.3f, -1.0f, -0.5f, 0.0f };
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseSun);
     glLightfv(GL_LIGHT0, GL_POSITION, sunDir);
     GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 
-    // === Headlight (Spotlight following camera/player) ===
+    // === Headlight ===
     glEnable(GL_LIGHT1);
 
-    // Position of the light: from player's position
     GLfloat lightPos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
     glLightfv(GL_LIGHT1, GL_POSITION, lightPos);
 
-    // Direction depends on camera mode
-    GLfloat lightDir[3];
-    if (isFirstPerson) {
-        // Headlight shines forward (Z-) in first-person
-        lightDir[0] = 0.0f;
-        lightDir[1] = -0.2f; // slight downward tilt
-        lightDir[2] = -1.0f;
-    }
-    else {
-        // In third-person, you may want it to point a bit lower or adjust
-        lightDir[0] = 0.0f;
-        lightDir[1] = -0.5f;
-        lightDir[2] = -1.0f;
-    }
+    GLfloat lightDir[] = {
+        cos(playerAngle * M_PI / 180.0f),
+        -0.2f,
+        sin(playerAngle * M_PI / 180.0f)
+    };
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, lightDir);
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);
 }
+
+
+
 
 
 

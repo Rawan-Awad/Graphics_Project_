@@ -33,9 +33,11 @@ void drawLevel2() {
     // === Draw Player Car ===
     glPushMatrix();
     glTranslatef(player.x, player.y + 0.5f, player.z);
-    // Increase the car's scale to make it visible and proportional to the scene.
-    // Let's try making it 5 times bigger than it was before.
-    glScalef(1.0f, 1.0f, 1.0f); // CHANGED FROM 0.1 to 0.5
+
+    //Apply rotation based on playerAngle (no negative)
+    glRotatef(playerAngle, 0.0f, 1.0f, 0.0f);
+
+    glScalef(1.0f, 1.0f, 1.0f);
     model_car.Draw();
     glPopMatrix();
 
@@ -64,11 +66,11 @@ void drawLevel2() {
 
     // === Draw Finish Line Flag ===
     glPushMatrix();
-   
     glScalef(0.5f, 0.5f, 0.5f);
     model_flag.Draw();
     glPopMatrix();
 }
+
 
 
 

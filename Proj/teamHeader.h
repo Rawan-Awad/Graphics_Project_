@@ -4,6 +4,7 @@
 
 #include <string>
 #include <glut.h>
+extern float playerAngle;
 
 // === ENUM FOR GAME LEVEL ===
 enum GameLevel { LEVEL1, LEVEL2, GAMEOVER};
