@@ -189,6 +189,7 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(handleKeyboard);
     glutMouseFunc(handleMouse);
     glutReshapeFunc(reshape);
+    glutFullScreen();
 
     glutMainLoop();
     return 0;
