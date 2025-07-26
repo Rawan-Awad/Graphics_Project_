@@ -206,37 +206,28 @@ void animateLevel2Objects() {
 
 void initLighting() {
     glEnable(GL_LIGHTING);
-    glEnable(GL_NORMALIZE);  // Normalize normals for scaling
+    glEnable(GL_NORMALIZE);
 
-    // === Sun Light ===
-    glEnable(GL_LIGHT0);  // Use LIGHT0 for the sun
-
+    // === Sun (LIGHT0) initial config ===
+    glEnable(GL_LIGHT0);
     GLfloat ambientSun[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    GLfloat diffuseSun[] = { 0.5f, 0.5f, 0.45f, 1.0f }; // CHANGED from 0.8 to 0.5
-
-    // Reduce the specular highlight intensity as well.
-    GLfloat specularSun[] = { 0.4f, 0.4f, 0.4f, 1.0f }; // CHANGED from 0.7 to 0.4
-    GLfloat positionSun[] = { 0.0f, 100.0f, 0.0f, 0.0f }; // Directional light
+    GLfloat diffuseSun[] = { 0.5f, 0.5f, 0.45f, 1.0f };
+    GLfloat specularSun[] = { 0.4f, 0.4f, 0.4f, 1.0f };
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientSun);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseSun);
     glLightfv(GL_LIGHT0, GL_SPECULAR, specularSun);
-    glLightfv(GL_LIGHT0, GL_POSITION, positionSun);
 
-    // === Headlights ===
-    glEnable(GL_LIGHT1);  // Use LIGHT1 for headlights
-
-    GLfloat ambientHL[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // No ambient from headlights
-    // Make the diffuse component very bright for the test
-    GLfloat diffuseHL[] = { 1.0f, 1.0f, 0.8f, 1.0f }; // VERY BRIGHT
-    GLfloat specularHL[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // BRIGHT HIGHLIGHT
-
+    // === Headlights (LIGHT1) initial config ===
+    glEnable(GL_LIGHT1);
+    GLfloat ambientHL[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+    GLfloat diffuseHL[] = { 1.0f, 1.0f, 0.8f, 1.0f };
+    GLfloat specularHL[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientHL);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseHL);
     glLightfv(GL_LIGHT1, GL_SPECULAR, specularHL);
-
-    
 }
+
 
 

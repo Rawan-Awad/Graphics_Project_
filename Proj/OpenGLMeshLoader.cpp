@@ -39,6 +39,7 @@ void initGame() {
     initLighting();   // Team 3
     glEnable(GL_LIGHTING);
     glEnable(GL_COLOR_MATERIAL);//allows gl color to affect material
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 }
 
 static int getFacingIndex(float yaw) {
@@ -51,7 +52,7 @@ static int getFacingIndex(float yaw) {
 
 
 // === INPUT ===
-void handleKeyboard(unsigned char key, int x, int y) {  
+void handleKeyboard(unsigned char key, int x, int y) {
     bool moved = false;
 
     // Compute forward vector from yaw
@@ -64,7 +65,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
     bool sideways = (facing == 1 || facing == 3);  // left or right
 
     switch (key) {
-        // � Rotation A/D unchanged
+        //   Rotation A/D unchanged
     case 'a': case 'A':
         player.yaw += 90.0f;
         if (player.yaw >= 360.0f) player.yaw -= 360.0f;
@@ -75,7 +76,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
         if (player.yaw < 0.0f) player.yaw += 360.0f;
         break;
 
-        // � Move Forward/Backward with inversion when sideways
+        //   Move Forward/Backward with inversion when sideways
     case 'w': case 'W':
         if (sideways) {
             // swap: W moves backward
@@ -104,7 +105,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
         moved = true;
         break;
 
-        // � Change level or quit
+        //   Change level or quit
     case 'l': case 'L':
         currentLevel = LEVEL2;
         player.stamina = 100;
@@ -429,26 +430,38 @@ void drawGameWinScreen() {
 
 // === LIGHTING ===
 void updateLighting() {
-    //sunlight
+    // === SUNLIGHT (Directional Light - Cycles Like Day/Night) ===
     glEnable(GL_LIGHT0);
 
-    //simulate sunlight intensity over time(sine wave)
-    float sunIntensity = 0.5f + 0.5f * sin(glutGet(GLUT_ELAPSED_TIME) * 0.001f);
-    GLfloat diffuseSun[] = { sunIntensity,sunIntensity,sunIntensity,1.0f };
-    GLfloat sunDir[] = { -0.3f,-1.0f,-0.5f,0.0f };//directional sunlight
+    // Time-based sine wave: value oscillates between 0.1 and 1.0
+    float t = glutGet(GLUT_ELAPSED_TIME) * 0.0001f;  // slower cycle
+    sunIntensity = 0.55f + 0.45f * sin(t);  // oscillates between ~0.1 to 1.0
+    sunIntensity = max(0.1f, sunIntensity); // don't go fully dark
+
+    GLfloat diffuseSun[] = { sunIntensity, sunIntensity, sunIntensity, 1.0f };
+    GLfloat sunDir[] = { -0.3f, -1.0f, -0.5f, 0.0f }; // Directional sunlight
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseSun);
     glLightfv(GL_LIGHT0, GL_POSITION, sunDir);
+
+    // Ambient stays low but constant (general background light)
     GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 
 
     glEnable(GL_LIGHT1);
+    // HEADLIGHTS: position in front of car based on yaw
+    float rad = player.yaw * (3.14f / 180.0f);
+    float headlightX = player.x + sin(rad) * 2.0f;   // 2 units in front
+    float headlightY = player.y + 1.0f;              // slightly above car
+    float headlightZ = player.z - cos(rad) * 2.0f;
 
-    GLfloat light_pos[] = { player.x, player.y + 0.5f, player.z, 1.0f };
+    GLfloat light_pos[] = { headlightX, headlightY, headlightZ, 1.0f };
     glLightfv(GL_LIGHT1, GL_POSITION, light_pos);
 
-    GLfloat light_dir[] = { 0.0f, -0.5f, -10.0f };
+    // Direction should point slightly downward and forward
+    GLfloat light_dir[] = { sin(rad), -0.2f, -cos(rad) };
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir);
+
 
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 25.0f);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 50.0f);;
@@ -518,7 +531,7 @@ void timer(int value) {
             animateLevel2Objects();  // T3 - animation
         }
     }
-    
+
 
     updateLighting(); // T3 - lighting
     glutPostRedisplay();
