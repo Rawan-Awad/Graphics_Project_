@@ -11,7 +11,7 @@
 using namespace std;
 
 // === GLOBAL DEFINITIONS ===
-Player player = { 0.0f, 0.0f, 0.0f, 0.0f, 0, false };
+Player player = { 0.0f, 0.0f, 0.0f, 0.0f, 0,0, false };
 float moveSpeed = 0.5f;
 bool isFirstPerson = false;
 GameLevel currentLevel = LEVEL1;
@@ -41,44 +41,84 @@ void initGame() {
     glEnable(GL_COLOR_MATERIAL);//allows gl color to affect material
 }
 
+static int getFacingIndex(float yaw) {
+    // Round yaw/90 to nearest integer, mod 4
+    int idx = int(std::round(yaw / 90.0f)) % 4;
+    if (idx < 0) idx += 4;
+    return idx;
+}
 // === INPUT ===
-void handleKeyboard(unsigned char key, int x, int y) {
-    switch (key) {
-    case 'w': case 'W':
-    case 's': case 'S':
-    case 'a': case 'A':
-    case 'd': case 'D':
-        // Movement logic
-        if (key == 'w' || key == 'W') {
-            player.z -= moveSpeed;
-            player.playerAngle = 0.0f;
-        }
-        if (key == 's' || key == 'S') {
-            player.z += moveSpeed;
-        }
-        if (key == 'a' || key == 'A') {
-            player.x -= moveSpeed;
-            player.playerAngle = 90.0f;
-        }
-        if (key == 'd' || key == 'D') {
-            player.x += moveSpeed;
-            player.playerAngle = -90.0f;
-        }
 
-        // Start car movement sound (once)
-        if (!carSoundPlaying) {
-            playSound("car_move");
-            carSoundPlaying = true;
-        }
+
+// === INPUT ===
+void handleKeyboard(unsigned char key, int x, int y) {  
+    bool moved = false;
+
+    // Compute forward vector from yaw
+    float rad = player.yaw * (3.14f / 180.0f);
+    float fx = sinf(rad) * moveSpeed;
+    float fz = -cosf(rad) * moveSpeed;
+
+    // Which way are we facing?
+    int facing = getFacingIndex(player.yaw);
+    bool sideways = (facing == 1 || facing == 3);  // left or right
+
+    switch (key) {
+        // � Rotation A/D unchanged
+    case 'a': case 'A':
+        player.yaw += 90.0f;
+        if (player.yaw >= 360.0f) player.yaw -= 360.0f;
         break;
 
+    case 'd': case 'D':
+        player.yaw -= 90.0f;
+        if (player.yaw < 0.0f) player.yaw += 360.0f;
+        break;
+
+        // � Move Forward/Backward with inversion when sideways
+    case 'w': case 'W':
+        if (sideways) {
+            // swap: W moves backward
+            player.x -= fx;
+            player.z -= fz;
+        }
+        else {
+            // normal: W moves forward
+            player.x += fx;
+            player.z += fz;
+        }
+        moved = true;
+        break;
+
+    case 's': case 'S':
+        if (sideways) {
+            // swap: S moves forward
+            player.x += fx;
+            player.z += fz;
+        }
+        else {
+            // normal: S moves backward
+            player.x -= fx;
+            player.z -= fz;
+        }
+        moved = true;
+        break;
+
+        // � Change level or quit
     case 'l': case 'L':
         currentLevel = LEVEL2;
         player.stamina = 100;
         player.z = 300.0f;
         break;
+    case 27:
+        ::exit(EXIT_SUCCESS);
+        break;
+    }
 
-    case 27:  ::exit(EXIT_SUCCESS); break; // ESC
+    // Optionally play your movement sound only if actually moved
+    if (moved && !carSoundPlaying) {
+        playSound("car_move");
+        carSoundPlaying = true;
     }
 }
 
@@ -95,15 +135,31 @@ void toggleCameraView() {
 
 // === CAMERA ===
 void updateCamera() {
+    // compute a unit?forward vector from yaw
+    float aks_r = player.yaw * float(3.14 / 180.0f);
+    float r = -aks_r;
+    float fx = sinf(r);
+    float fz = -cosf(r);
+
     if (isFirstPerson) {
-        gluLookAt(player.x, player.y + 1.0f, player.z,
-            player.x, player.y + 1.0f, player.z - 5,
-            0.0f, 1.0f, 0.0f);
+        // eye is at the car
+        float ex = player.x;
+        float ey = player.y + 1.0f;
+        float ez = player.z;
+        // center is a little bit in front of the car
+        gluLookAt(ex, ey, ez,
+            ex + fx, ey, ez + fz,
+            0, 1, 0);
     }
     else {
-        gluLookAt(player.x, player.y + 5.0f, player.z + 10.0f,
+        // third?person: back off along the negative forward vector
+        float ex = player.x - fx * 10.0f;
+        float ey = player.y + 5.0f;
+        float ez = player.z - fz * 10.0f;
+        // look at the car
+        gluLookAt(ex, ey, ez,
             player.x, player.y, player.z,
-            0.0f, 1.0f, 0.0f);
+            0, 1, 0);
     }
 }
 
@@ -428,6 +484,7 @@ int main(int argc, char** argv) {
     glutKeyboardFunc(handleKeyboard);
     glutMouseFunc(handleMouse);
     glutReshapeFunc(reshape);
+    glutFullScreen();
 
     glutMainLoop();
     return 0;

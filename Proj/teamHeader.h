@@ -7,6 +7,7 @@
 
 // === ENUM FOR GAME LEVEL ===
 enum GameLevel { LEVEL1, LEVEL2, GAMEOVER};
+enum Direction{LEFT, RIGHT, DOWN, UP};
 extern GameLevel currentLevel;
 extern float collectibleX, collectibleZ;
 extern bool collected;
@@ -21,8 +22,9 @@ struct Player {
     float x, y, z;
     float stamina;
     int score;
+    float yaw; // rotation around the Y-axis
     bool hasNitro;
-    float playerAngle;
+	Direction direction; // LEFT or RIGHT
 };
 struct GameObject {
     float x, y, z;
