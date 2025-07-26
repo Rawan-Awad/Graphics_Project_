@@ -14,6 +14,7 @@ extern float obstacleX, obstacleZ;
 extern const int NUM_ROCKS;
 extern const int NUM_SIGNS;
 extern const int NUM_COINS;
+extern float groundLevelY;
 
 // === PLAYER STRUCT ===
 struct Player {

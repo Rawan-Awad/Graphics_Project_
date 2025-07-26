@@ -75,6 +75,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
     case 'l': case 'L':
         currentLevel = LEVEL2;
         player.stamina = 100;
+        player.z = 300.0f;
         break;
 
     case 27:  ::exit(EXIT_SUCCESS); break; // ESC
@@ -218,21 +219,29 @@ void updateLevel2Logic() {
 
     // --- 4. Obstacle Collision Logic ---
     // Colliding with obstacles will now cause a larger, immediate drop in stamina.
+      // --- Check for collision with ALL rocks ---
     for (int i = 0; i < NUM_ROCKS; i++) {
-        // First, check if this rock has already been destroyed.
-        if (!rocksDestroyed[i]) {
-            float dx = player.x - rocks[i].x;
-            float dz = player.z - rocks[i].z;
-            if (sqrt(dx * dx + dz * dz) < 2.0f) {
-                // FIX: Reduce the stamina penalty. Let's try 5.
-                player.stamina -= 5.0f;
-                playSound("car_crash");
+        float dx = player.x - rocks[i].x;
+        float dz = player.z - rocks[i].z;
+        float distance = sqrt(dx * dx + dz * dz);
+        float collisionRadius = 2.0f; // The "size" of the player and rock combined
 
-                // NEW: Mark this rock as destroyed so it disappears.
-                rocksDestroyed[i] = true;
-            }
+        if (distance < collisionRadius) {
+            // A collision has occurred.
+            player.stamina -= 0.1f; // A very small stamina penalty for the bump.
+            playSound("car_crash");
+
+            // --- Solid Collision Response ---
+            // Calculate how much the player has penetrated the obstacle.
+            float overlap = collisionRadius - distance;
+
+            // Push the player back along the vector from the obstacle's center
+            // to the player's center, just enough to resolve the overlap.
+            player.x += (dx / distance) * overlap;
+            player.z += (dz / distance) * overlap;
         }
     }
+
 
     // --- Check for collision with ALL signs ---
     for (int i = 0; i < NUM_SIGNS; i++) {
