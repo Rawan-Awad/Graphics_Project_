@@ -108,7 +108,8 @@ void handleKeyboard(unsigned char key, int x, int y) {
     case 'l': case 'L':
         currentLevel = LEVEL2;
         player.stamina = 100;
-        player.z = 300.0f;
+        player.z = 200.0f;
+        player.yaw = 0.0f;
         break;
     case 27:
         ::exit(EXIT_SUCCESS);
@@ -298,29 +299,30 @@ void updateLevel2Logic() {
         }
     }
 
-
-    // --- Check for collision with ALL signs ---
+    //check collision for signs
     for (int i = 0; i < NUM_SIGNS; i++) {
-        // First, check if this sign has already been destroyed.
-        if (!signsDestroyed[i]) {
-            float dx = player.x - signs[i].x;
-            float dz = player.z - signs[i].z;
-            if (sqrt(dx * dx + dz * dz) < 2.0f) {
-                // FIX: Reduce the stamina penalty.
-                player.stamina -= 5.0f;
-                playSound("car_crash");
+        float dx = player.x - signs[i].x;
+        float dz = player.z - signs[i].z;
+        float distance = sqrt(dx * dx + dz * dz);
+        float collisionRadius = 2.0f; // Using the same collision size
 
-                // NEW: Mark this sign as destroyed.
-                signsDestroyed[i] = true;
-            }
+        if (distance < collisionRadius) {
+            // Apply the same effects as hitting a rock
+            player.stamina -= 0.1f;
+            playSound("car_crash");
+
+            // Apply the same solid push-back response
+            float overlap = collisionRadius - distance;
+            player.x += (dx / distance) * overlap;
+            player.z += (dz / distance) * overlap;
         }
     }
 
     // --- 5. Win Condition ---
-    if (player.z < -49.0f) {
+    if (player.z <= 0.0f) {
         playSound("cheer"); // Play cheering sound
-        MessageBoxA(NULL, "You reached the finish line!", "Level 2 Complete!", MB_OK);
-        ::exit(EXIT_SUCCESS);
+        currentLevel = GAMEWIN; // Change the game state to WIN!
+        return; // Stop processing level logic
     }
 }
 // Add this new function anywhere in your main OpenGLMeshLoader.cpp file.
@@ -368,6 +370,55 @@ void drawGameOverScreen() {
     glEnable(GL_LIGHTING);
 
     // Restore the previous matrices.
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+void drawGameWinScreen() {
+    // Switch to 2D orthographic projection to draw text on the screen.
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    gluOrtho2D(0, 800, 600, 0); // Using 800x600 window size. Top-left is (0,0).
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    // Disable 3D features like lighting and depth testing to ensure the UI draws correctly.
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+
+    // Draw a semi-transparent blue background to give a celebratory feel.
+    glColor4f(0.0f, 0.2f, 0.5f, 0.5f); // Blue with 50% transparency
+    glBegin(GL_QUADS);
+    glVertex2i(0, 0);
+    glVertex2i(800, 0);
+    glVertex2i(800, 600);
+    glVertex2i(0, 600);
+    glEnd();
+
+    // Draw the "YOU WIN!" text in the center of the screen.
+    glColor3f(1.0f, 1.0f, 0.0f); // Bright yellow color for the text.
+    glRasterPos2i(350, 300); // Position the text.
+    const char* message = "YOU WIN!";
+    for (const char* c = message; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+    }
+
+    // Draw the "Final Score" text just below the main message.
+    std::string scoreMsg = "Final Score: " + std::to_string(player.score);
+    glRasterPos2i(330, 340); // Positioned below the "YOU WIN!" text.
+    for (char c : scoreMsg) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c);
+    }
+
+    // Re-enable the 3D features before exiting the function.
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+
+    // Restore the previous projection and modelview matrices.
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
@@ -446,6 +497,10 @@ void display() {
     if (currentLevel == GAMEOVER) {
         drawGameOverScreen();
     }
+    else if (currentLevel == GAMEWIN) {
+        drawGameWinScreen(); // <-- ADD THIS CALL
+    }
+
 
     drawHUD();
     glutSwapBuffers();
@@ -453,7 +508,7 @@ void display() {
 
 // === TIMER ===
 void timer(int value) {
-    if (currentLevel != GAMEOVER) {
+    if (currentLevel != GAMEOVER && currentLevel != GAMEWIN) {
         if (currentLevel == LEVEL1) {
             updateLevel1Logic();     // T1 - logic
             animateLevel1Objects();  // T2 - animation

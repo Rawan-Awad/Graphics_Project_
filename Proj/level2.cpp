@@ -111,7 +111,7 @@ void initLevel2() {
     model_rock.Load("Models/rock/Stone 4.3DS");
     model_desert.Load("Models/desert/uploads_files_4614960_Deasert+sell.3ds");
     model_flag.Load("Models/flag3/uploads_files_2024783_Flag_v1_001.3DS");
-    model_coin.Load("Models/coin/uploads_files_4153932_Cartoon_Coin01_3ds.3ds");
+    model_coin.Load("Models/coin2/uploads_files_3504028_Coin.3ds");
     setupLevel2Objects();
     
 }
@@ -129,14 +129,14 @@ void drawLevel2() {
     // === Draw Player Car ===
     glPushMatrix();
     glTranslatef(player.x, groundLevelY + 0.5f, player.z);
-    glRotatef(player.playerAngle, 0.0f, 1.0f, 0.0f);
+    glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
     glScalef(1.0f, 1.0f, 1.0f);
     model_car.Draw();
     glPopMatrix();
 
     // === Draw Finish Line Flag ===
     glPushMatrix();
-    glTranslatef(0.0f, 0.5f, 0.0f);
+    glTranslatef(0.0f, -40.0f, 0.0f);
     glScalef(3.0f, 3.0f, 3.0f);
     model_flag.Draw();
     glPopMatrix();

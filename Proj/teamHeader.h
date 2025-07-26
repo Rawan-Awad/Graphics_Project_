@@ -6,7 +6,7 @@
 #include <glut.h>
 
 // === ENUM FOR GAME LEVEL ===
-enum GameLevel { LEVEL1, LEVEL2, GAMEOVER};
+enum GameLevel { LEVEL1, LEVEL2, GAMEOVER , GAMEWIN};
 enum Direction{LEFT, RIGHT, DOWN, UP};
 extern GameLevel currentLevel;
 extern float collectibleX, collectibleZ;
@@ -52,6 +52,7 @@ void updateLighting();
 void playSound(const std::string& type);
 void initGame();
 void drawGameOverScreen();
+void drawGameWinScreen();
 
 // === TEAM 2 - LEVEL 1 ===
 void initLevel1();
@@ -64,5 +65,4 @@ void initLevel2();
 void drawLevel2();
 void animateLevel2Objects();
 void initLighting(); // shared from team 3
-
 #endif
