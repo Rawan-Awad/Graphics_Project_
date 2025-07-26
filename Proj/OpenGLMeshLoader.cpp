@@ -286,7 +286,7 @@ void updateLevel2Logic() {
 
         if (distance < collisionRadius) {
             // A collision has occurred.
-            player.stamina -= 0.1f; // A very small stamina penalty for the bump.
+            player.stamina -= 0.5f; // A very small stamina penalty for the bump.
             playSound("car_crash");
 
             // --- Solid Collision Response ---
@@ -309,7 +309,7 @@ void updateLevel2Logic() {
 
         if (distance < collisionRadius) {
             // Apply the same effects as hitting a rock
-            player.stamina -= 0.1f;
+            player.stamina -= 0.5f;
             playSound("car_crash");
 
             // Apply the same solid push-back response
