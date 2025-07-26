@@ -15,7 +15,6 @@ Model_3DS nitro;
 GLTexture tex_ground;
 GLTexture tex_sky;
 
-
 float rotationAngle = 0.0f;
 
 
@@ -60,13 +59,20 @@ void drawLevel1() {
  
 
     glPushMatrix();
-    glTranslatef(0.0f, -0.8f, 0.0f);   // ↓ drop city
+    glTranslatef(-30.0f, -0.8f, 0.0f);   // ↓ drop city
     glScalef(0.5f, 0.5f, 0.5f);
     city.Draw();
     glPopMatrix();
 
     glPushMatrix();
-    glTranslatef(player.x, player.y + 1.0f, player.z+7);
+    glTranslatef(+30.0f, -0.8f, 0.0f);
+    glScalef(0.5f, 0.5f, 0.5f);
+    city.Draw();
+    glPopMatrix();
+
+    glPushMatrix();
+    glTranslatef(player.x, player.y, player.z);
+    glRotatef(player.yaw, 0, 1, 0);
     glScalef(1.0f, 1.0f, 1.0f);
     model_car.Draw();
     glPopMatrix();
@@ -94,7 +100,7 @@ void animateLevel1Objects() {
     struct Pickup { Model_3DS* m; float x, z, s, phase; };
     Pickup pickups[] = {
       { &hotdog, -2.0f,  2.0f, 0.03f, 0.0f },
-      { &coffee,  2.0f,  2.0f, 0.03f, 1.0f },
+      { &coffee,  2.0f,  2.0f, 1.0f, 1.0f },
       { &nitro,   2.0f, -2.0f, 0.02f, 2.0f },
       { &fuel,   -2.0f, -2.0f, 0.02f, 3.0f },
     };
