@@ -47,6 +47,8 @@ static int getFacingIndex(float yaw) {
     if (idx < 0) idx += 4;
     return idx;
 }
+// === INPUT ===
+
 
 // === INPUT ===
 void handleKeyboard(unsigned char key, int x, int y) {  
@@ -62,7 +64,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
     bool sideways = (facing == 1 || facing == 3);  // left or right
 
     switch (key) {
-        // — Rotation A/D unchanged
+        // ï¿½ Rotation A/D unchanged
     case 'a': case 'A':
         player.yaw += 90.0f;
         if (player.yaw >= 360.0f) player.yaw -= 360.0f;
@@ -73,7 +75,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
         if (player.yaw < 0.0f) player.yaw += 360.0f;
         break;
 
-        // — Move Forward/Backward with inversion when sideways
+        // ï¿½ Move Forward/Backward with inversion when sideways
     case 'w': case 'W':
         if (sideways) {
             // swap: W moves backward
@@ -102,7 +104,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
         moved = true;
         break;
 
-        // — Change level or quit
+        // ï¿½ Change level or quit
     case 'l': case 'L':
         currentLevel = LEVEL2;
         player.stamina = 100;
@@ -248,7 +250,7 @@ void updateLevel2Logic() {
     // --- 1. Continuous Stamina Decrease ---
     // Requirement: "The player has to move through the dessert and tries to survive till he reaches the target."
     // This implies a constant challenge, so we'll decrease stamina over time.
-    player.stamina -= 0.05f; // Decrease stamina by a small amount each frame. Adjust this value to make it faster/slower.
+    player.stamina -= 0.03f; // Decrease stamina by a small amount each frame. Adjust this value to make it faster/slower.
 
     // --- 2. Check for Game Over Condition ---
     if (player.stamina <= 0) {
@@ -257,29 +259,53 @@ void updateLevel2Logic() {
     }
 
     // --- 3. Coin Collection Logic ---
-    if (!collected) {
-        float dx_coin = player.x - collectibleX;
-        float dz_coin = player.z - collectibleZ;
-        if (sqrt(dx_coin * dx_coin + dz_coin * dz_coin) < 2.0f) {
-            player.score += 10;
-            collected = true;
-            playSound("collect_coin");
-            // A potential game mechanic: collecting a coin could restore a bit of stamina.
-            // player.stamina += 20.0f; 
+    for (int i = 0; i < NUM_COINS; i++) {
+        // Check the new array
+        if (!coinsCollected[i]) {
+            float dx = player.x - coins[i].x;
+            float dz = player.z - coins[i].z;
+            if (sqrt(dx * dx + dz * dz) < 2.0f) {
+                player.score += 10;
+                coinsCollected[i] = true; // Update the new array
+                playSound("collect_coin");
+            }
         }
     }
 
     // --- 4. Obstacle Collision Logic ---
     // Colliding with obstacles will now cause a larger, immediate drop in stamina.
-    float dx_obstacle = player.x - obstacleX;
-    float dz_obstacle = player.z - obstacleZ;
-    if (sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle) < 2.0f) {
-        player.stamina -= 15.0f;
-        playSound("car_crash");
-        player.x -= (dx_obstacle / sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle)) * 0.5f;
-        player.z -= (dz_obstacle / sqrt(dx_obstacle * dx_obstacle + dz_obstacle * dz_obstacle)) * 0.5f;
+    for (int i = 0; i < NUM_ROCKS; i++) {
+        // First, check if this rock has already been destroyed.
+        if (!rocksDestroyed[i]) {
+            float dx = player.x - rocks[i].x;
+            float dz = player.z - rocks[i].z;
+            if (sqrt(dx * dx + dz * dz) < 2.0f) {
+                // FIX: Reduce the stamina penalty. Let's try 5.
+                player.stamina -= 5.0f;
+                playSound("car_crash");
+
+                // NEW: Mark this rock as destroyed so it disappears.
+                rocksDestroyed[i] = true;
+            }
+        }
     }
 
+    // --- Check for collision with ALL signs ---
+    for (int i = 0; i < NUM_SIGNS; i++) {
+        // First, check if this sign has already been destroyed.
+        if (!signsDestroyed[i]) {
+            float dx = player.x - signs[i].x;
+            float dz = player.z - signs[i].z;
+            if (sqrt(dx * dx + dz * dz) < 2.0f) {
+                // FIX: Reduce the stamina penalty.
+                player.stamina -= 5.0f;
+                playSound("car_crash");
+
+                // NEW: Mark this sign as destroyed.
+                signsDestroyed[i] = true;
+            }
+        }
+    }
 
     // --- 5. Win Condition ---
     if (player.z < -49.0f) {
@@ -404,7 +430,10 @@ void display() {
     updateLighting();
     updateCamera();
     if (currentLevel == LEVEL1) drawLevel1();
-    else drawLevel2();
+    else {
+        drawLevel2();
+        animateLevel2Objects();
+    }
     if (currentLevel == GAMEOVER) {
         drawGameOverScreen();
     }

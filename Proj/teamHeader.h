@@ -12,6 +12,9 @@ extern GameLevel currentLevel;
 extern float collectibleX, collectibleZ;
 extern bool collected;
 extern float obstacleX, obstacleZ;
+extern const int NUM_ROCKS;
+extern const int NUM_SIGNS;
+extern const int NUM_COINS;
 
 // === PLAYER STRUCT ===
 struct Player {
@@ -22,7 +25,15 @@ struct Player {
     bool hasNitro;
 	Direction direction; // LEFT or RIGHT
 };
-
+struct GameObject {
+    float x, y, z;
+};
+extern GameObject coins[];
+extern GameObject rocks[];
+extern GameObject signs[];
+extern bool coinsCollected[];
+extern bool rocksDestroyed[];
+extern bool signsDestroyed[];
 // === GLOBAL VARIABLES ===
 extern Player player;
 extern float moveSpeed;
