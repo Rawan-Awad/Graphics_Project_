@@ -63,6 +63,7 @@ void drawLevel1() {
     glScalef(0.5f, 0.5f, 0.5f);
     city.Draw();
     glPopMatrix();
+    
 
     glPushMatrix();
     glTranslatef(+30.0f, -0.8f, 0.0f);

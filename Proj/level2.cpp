@@ -86,7 +86,7 @@ void drawLevel2() {
     // === Draw Player Car ===
     glPushMatrix();
     glTranslatef(player.x, 0.5f, player.z);
-    glRotatef(player.playerAngle, 0.0f, 1.0f, 0.0f);
+    glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
     glScalef(1.0f, 1.0f, 1.0f);
     model_car.Draw();
     glPopMatrix();
