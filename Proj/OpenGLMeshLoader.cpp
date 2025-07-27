@@ -20,6 +20,10 @@ bool carSoundPlaying = false;
 int resumeCarSoundAt = -1;
 //fake collectibles
 bool collected = false;
+bool nitroActive = false;
+int nitroEndTime = 0;
+float normalSpeed = 0.5f;
+float boostedSpeed = 1.0f;
 
 
 // === INIT ===
@@ -46,6 +50,7 @@ static int getFacingIndex(float yaw) {
 // === INPUT ===
 void handleKeyboard(unsigned char key, int x, int y) {
     bool moved = false;
+    float moveSpeed = nitroActive ? boostedSpeed : normalSpeed;
 
     // Compute forward vector from yaw
     float rad = player.yaw * (3.14f / 180.0f);
@@ -55,6 +60,12 @@ void handleKeyboard(unsigned char key, int x, int y) {
     // Which way are we facing?
     int facing = getFacingIndex(player.yaw);
     bool sideways = (facing == 1 || facing == 3);  // left or right
+
+    int currentTime = glutGet(GLUT_ELAPSED_TIME);
+    if (nitroActive && currentTime > nitroEndTime) {
+        nitroActive = false; // turn off the boost
+    }
+
 
     switch (key) {
         //   Rotation A/D unchanged
@@ -205,6 +216,25 @@ void updateLevel1Logic() {
                 playSound("drink");
                 carSoundPlaying = false;
                 resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000;
+            }
+        }
+    }
+
+    for (int i = 0; i < NUM_NITRO; i++) {
+        // Check the new array
+        if (!nitroCollected[i]) {
+            float dx = player.x - nitroPickups[i].x;
+            float dz = player.z - nitroPickups[i].z;
+            if (sqrt(dx * dx + dz * dz) < 2.0f) {
+                player.stamina += 10;
+                nitroCollected[i] = true; // Update the new array
+                //PlaySound(NULL, NULL, 0); // Immediately stop current sound
+                //playSound("drink");
+                //carSoundPlaying = false;
+                //resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000;
+                nitroActive = true;
+                nitroEndTime = glutGet(GLUT_ELAPSED_TIME) + 10000; // 10 seconds later
+
             }
         }
     }
