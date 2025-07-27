@@ -17,6 +17,7 @@ bool isFirstPerson = false;
 GameLevel currentLevel = LEVEL1;
 float sunIntensity = 0.5f;
 bool carSoundPlaying = false;
+int resumeCarSoundAt = -1;
 //fake collectibles
 float foodX = 10.0f;
 float foodZ = -5.0f;
@@ -29,6 +30,7 @@ float collectibleZ = -5.0f;
 bool collected = false;
 float obstacleX = 15.0f;
 float obstacleZ = -10.0f;
+
 
 // === INIT ===
 void initGame() {
@@ -118,7 +120,7 @@ void handleKeyboard(unsigned char key, int x, int y) {
     }
 
     // Optionally play your movement sound only if actually moved
-    if (moved && !carSoundPlaying) {
+    if (moved && !carSoundPlaying && resumeCarSoundAt == -1) {
         playSound("car_move");
         carSoundPlaying = true;
     }
@@ -270,7 +272,12 @@ void updateLevel2Logic() {
             if (sqrt(dx * dx + dz * dz) < 2.0f) {
                 player.score += 10;
                 coinsCollected[i] = true; // Update the new array
+                
+                // Stop car sound and schedule it to resume after 1 second
+                PlaySound(NULL, NULL, 0); // Immediately stop current sound
                 playSound("collect_coin");
+                carSoundPlaying = false;
+                resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000; // 1 sec from now
             }
         }
     }
@@ -286,9 +293,16 @@ void updateLevel2Logic() {
 
         if (distance < collisionRadius) {
             // A collision has occurred.
+<<<<<<< Updated upstream
             player.stamina -= 0.5f; // A very small stamina penalty for the bump.
+=======
+            player.stamina -= 0.1f; // A very small stamina penalty for the bump.
+            
+            PlaySound(NULL, NULL, 0); // Immediately stop current sound
+>>>>>>> Stashed changes
             playSound("car_crash");
-
+            carSoundPlaying = false;
+            resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000; // 1 sec from now
             // --- Solid Collision Response ---
             // Calculate how much the player has penetrated the obstacle.
             float overlap = collisionRadius - distance;
@@ -309,9 +323,16 @@ void updateLevel2Logic() {
 
         if (distance < collisionRadius) {
             // Apply the same effects as hitting a rock
+<<<<<<< Updated upstream
             player.stamina -= 0.5f;
+=======
+            player.stamina -= 0.1f;
+            
+            PlaySound(NULL, NULL, 0); // Immediately stop current sound
+>>>>>>> Stashed changes
             playSound("car_crash");
-
+            carSoundPlaying = false;
+            resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000; // 1 sec from now
             // Apply the same solid push-back response
             float overlap = collisionRadius - distance;
             player.x += (dx / distance) * overlap;
@@ -321,9 +342,15 @@ void updateLevel2Logic() {
 
     // --- 5. Win Condition ---
     if (player.z <= 0.0f) {
-        playSound("cheer"); // Play cheering sound
-        currentLevel = GAMEWIN; // Change the game state to WIN!
-        return; // Stop processing level logic
+        // Stop current sound and play cheer
+        PlaySound(NULL, NULL, 0);
+        playSound("win");
+
+        carSoundPlaying = false; // prevent car sound from restarting
+        resumeCarSoundAt = 0;   // cancel pending resume
+
+        currentLevel = GAMEWIN;
+        return;
     }
 }
 // Add this new function anywhere in your main OpenGLMeshLoader.cpp file.
@@ -491,7 +518,7 @@ void playSound(const std::string& type) {
         PlaySound(TEXT("level_up.wav"), NULL, SND_FILENAME | SND_ASYNC);
     }
     else if (type == "win") {
-        PlaySound(TEXT("cheer.wav"), NULL, SND_FILENAME | SND_ASYNC);
+        PlaySound(TEXT("cheer_2.wav"), NULL, SND_FILENAME | SND_ASYNC);
     }
 }
 
@@ -535,6 +562,12 @@ void timer(int value) {
 
     updateLighting(); // T3 - lighting
     glutPostRedisplay();
+    if (resumeCarSoundAt > 0 && glutGet(GLUT_ELAPSED_TIME) >= resumeCarSoundAt) {
+        playSound("car_move");
+        carSoundPlaying = true;
+        resumeCarSoundAt = -1; // reset timer
+    }
+    
     glutTimerFunc(16, timer, 0); // ~60 FPS
 }
 
