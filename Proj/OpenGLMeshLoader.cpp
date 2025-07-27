@@ -19,17 +19,7 @@ float sunIntensity = 0.5f;
 bool carSoundPlaying = false;
 int resumeCarSoundAt = -1;
 //fake collectibles
-float foodX = 10.0f;
-float foodZ = -5.0f;
-float drinkX = 12.0f;
-float drinkZ = -8.0f;
-bool foodCollected = false;
-bool drinkCollected = false;
-float collectibleX = 10.0f;
-float collectibleZ = -5.0f;
 bool collected = false;
-float obstacleX = 15.0f;
-float obstacleZ = -10.0f;
 
 
 // === INIT ===
@@ -211,7 +201,10 @@ void updateLevel1Logic() {
             if (sqrt(dx * dx + dz * dz) < 2.0f) {
                 player.stamina += 10;
                 coffeeCollected[i] = true; // Update the new array
+                PlaySound(NULL, NULL, 0); // Immediately stop current sound
                 playSound("drink");
+                carSoundPlaying = false;
+                resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000;
             }
         }
     }
@@ -220,12 +213,24 @@ void updateLevel1Logic() {
         float dx = player.x - houses[i].x;
         float dz = player.z - houses[i].z;
         float distance = sqrt(dx * dx + dz * dz);
-        float collisionRadius = 8.0f; // The "size" of the player and rock combined
+        float collisionRadius = 6.0f; // The "size" of the player and rock combined
 
         if (distance < collisionRadius) {
             // A collision has occurred.
-            player.x -= 10; // A very small stamina penalty for the bump.
+            if (player.yaw == -90)
+                player.x -= 10; // Push back a bit more if facing left
+            else if (player.yaw == 90)
+                player.x += 10; // Push back a bit more if facing right
+            else if (player.yaw == 180)
+                player.z -= 10; // Push back a bit more if facing backward
+            else player.z += 10; // Push back a bit more if facing forward
+            // A very small stamina penalty for the bump.
+            PlaySound(NULL, NULL, 0); // Immediately stop current sound
+
             playSound("car_crash");
+            carSoundPlaying = false;
+            resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000;
+
 
             // --- Solid Collision Response ---
             // Calculate how much the player has penetrated the obstacle.
@@ -245,8 +250,19 @@ void updateLevel1Logic() {
 
         if (distance < collisionRadius) {
             // A collision has occurred.
-            player.x -= 10; // A very small stamina penalty for the bump.
+            if (player.yaw == -90)
+                player.x -= 10; // Push back a bit more if facing left
+            else if (player.yaw == 90)
+                player.x += 10; // Push back a bit more if facing right
+            else if (player.yaw == 180)
+                player.z -= 10; // Push back a bit more if facing backward
+            else player.z += 10; // Push back a bit more if facing forward
+            // A very small stamina penalty for the bump.
+            PlaySound(NULL, NULL, 0); // Immediately stop current sound
+
             playSound("car_crash");
+            carSoundPlaying = false;
+            resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000;
 
             // --- Solid Collision Response ---
             // Calculate how much the player has penetrated the obstacle.
@@ -295,7 +311,7 @@ void updateLevel2Logic() {
             if (sqrt(dx * dx + dz * dz) < 2.0f) {
                 player.score += 10;
                 coinsCollected[i] = true; // Update the new array
-                
+
                 // Stop car sound and schedule it to resume after 1 second
                 PlaySound(NULL, NULL, 0); // Immediately stop current sound
                 playSound("collect_coin");
@@ -318,9 +334,16 @@ void updateLevel2Logic() {
             // A collision has occurred.
 
             player.stamina -= 0.5f; // A very small stamina penalty for the bump.
+            if (player.yaw == -90)
+                player.x -= 10; // Push back a bit more if facing left
+            else if (player.yaw == 90)
+                player.x += 10; // Push back a bit more if facing right
+            else if (player.yaw == 180)
+                player.z -= 10; // Push back a bit more if facing backward
+            else player.z += 10; // Push back a bit more if facing forward
 
-            player.stamina -= 0.1f; // A very small stamina penalty for the bump.
-            
+            //player.stamina -= 0.1f; // A very small stamina penalty for the bump.
+
             PlaySound(NULL, NULL, 0); // Immediately stop current sound
 
             playSound("car_crash");
@@ -348,9 +371,17 @@ void updateLevel2Logic() {
             // Apply the same effects as hitting a rock
 
             player.stamina -= 0.5f;
-
-            player.stamina -= 0.1f;
+			if (player.yaw == -90)
+				player.x -= 10; // Push back a bit more if facing left
+			else if (player.yaw == 90)
+				player.x += 10; // Push back a bit more if facing right
+			else if (player.yaw == 180)
+				player.z -= 10; // Push back a bit more if facing backward
+			else player.z += 10; // Push back a bit more if facing forward
             
+
+            //player.stamina -= 0.1f;
+
             PlaySound(NULL, NULL, 0); // Immediately stop current sound
 
             playSound("car_crash");

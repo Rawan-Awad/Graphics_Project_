@@ -167,7 +167,7 @@ void drawLevel1() {
         }
     }
 
-    for (int i = 0; i < NUM_COFFEE; ++i) {
+    /*for (int i = 0; i < NUM_COFFEE; ++i) {
         if (!coffeeCollected[i]) {
         glPushMatrix();
         glTranslatef(coffeePickups[i].x, player.y, coffeePickups[i].z);
@@ -179,12 +179,12 @@ void drawLevel1() {
     for (int i = 0; i < NUM_NITRO; ++i) {
         if (!nitroCollected[i]) {
             glPushMatrix();
-            glTranslatef(nitroPickups[i].x, player.y, nitroPickups[i].z);
-            glScalef(100.0f, 100.0f, 100.0f);       // half‑size houses
+            glTranslatef(nitroPickups[i].x, player.y+2.0f, nitroPickups[i].z);
+            glScalef(0.01f, 0.01f, 0.01f);       // half‑size houses
             model_nitro.Draw();
             glPopMatrix();
         }
-    }
+    }*/
 
 
     glPushMatrix();
@@ -238,6 +238,19 @@ void animateLevel1Objects() {
         // 4) draw
         model_coffee.Draw();
         glPopMatrix();
+    }
+
+    for (int i = 0; i < NUM_NITRO; i++) {
+        // +++ ADD THIS CHECK +++
+        if (!nitroCollected[i]) {
+            glPushMatrix();
+            // Use the position from the coins array
+            glTranslatef(nitroPickups[i].x, player.y+2.0F, nitroPickups[i].z);
+            glRotatef(timeMs * 0.1f, 0.0f, 1.0f, 0.0f); // Apply rotation
+            glScalef(0.01f, 0.01f, 0.01f); // Use the same scale as in drawLevel2
+            model_nitro.Draw();
+            glPopMatrix();
+        }
     }
 
     // === Animate ALL Rotating Nitro Pickups ===
