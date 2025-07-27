@@ -293,13 +293,13 @@ void updateLevel2Logic() {
 
         if (distance < collisionRadius) {
             // A collision has occurred.
-<<<<<<< Updated upstream
+
             player.stamina -= 0.5f; // A very small stamina penalty for the bump.
-=======
+
             player.stamina -= 0.1f; // A very small stamina penalty for the bump.
             
             PlaySound(NULL, NULL, 0); // Immediately stop current sound
->>>>>>> Stashed changes
+
             playSound("car_crash");
             carSoundPlaying = false;
             resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000; // 1 sec from now
@@ -323,13 +323,13 @@ void updateLevel2Logic() {
 
         if (distance < collisionRadius) {
             // Apply the same effects as hitting a rock
-<<<<<<< Updated upstream
+
             player.stamina -= 0.5f;
-=======
+
             player.stamina -= 0.1f;
             
             PlaySound(NULL, NULL, 0); // Immediately stop current sound
->>>>>>> Stashed changes
+
             playSound("car_crash");
             carSoundPlaying = false;
             resumeCarSoundAt = glutGet(GLUT_ELAPSED_TIME) + 1000; // 1 sec from now
