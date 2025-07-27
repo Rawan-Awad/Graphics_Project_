@@ -30,14 +30,18 @@ float groundLevelY = -10.0f;
 void setupLevel2Objects() {
     srand(time(NULL)); // Seed the random number generator
 
-    // Define the boundaries for spawning objects.
-    // Adjust these values to fit the size of your desert terrain.
-    float minX = -50.0f;
-    float maxX = 50.0f;
-    float minZ = -100.0f; // Start of the level
-    float maxZ = -10.0f;  // Near the finish line
+    // --- 1. Define the Expanded Map Boundaries ---
+    // You've moved the player back, so let's make the world much bigger.
+    float minX = -100.0f;  // A wide but not excessive left/right range
+    float maxX = 100.0f;
+    float minZ = -100.0f; // The far end of the map
+    float maxZ = 280.0f;   // The closest objects can get to the player's start
 
-    // --- Generate random positions for ROCKS ---
+    // --- 2. Distance-Checked Spawning for Obstacles ---
+    std::vector<GameObject> placedObstacles; // A temporary list to track obstacle positions
+    float minDistance = 15.0f; // The minimum distance allowed between any two obstacles
+
+    // --- Generate positions for ROCKS ---
     for (int i = 0; i < NUM_ROCKS; i++) {
         // rand() % 100 gives a number from 0-99. / 100.0f makes it 0.0-0.99.
         // This formula scales and shifts the random number to fit our boundaries.
@@ -65,8 +69,8 @@ void setupLevel2Objects() {
 void initLevel2() {
     // Load desert scene, finish line, obstacles
     model_car.Load("Models/car/_Subaru-Loyale.3ds");         // Car model (if different from Level 1)
-    model_sign.Load("Models/StopSign/StopSign.3ds");      // Road sign obstacle
-    model_rock.Load("Models/rock/Stone 4.3DS");
+    model_sign.Load("Models/Sign 1/Sign 1.3ds");      // Road sign obstacle
+    model_rock.Load("Models/rock3/Rock07-Base.3ds");
     model_desert.Load("Models/desert/uploads_files_4614960_Deasert+sell.3ds");
     model_flag.Load("Models/flag/lp_flag3ds.3DS");
     model_coin.Load("Models/coin/uploads_files_4153932_Cartoon_Coin01_3ds.3ds");
@@ -78,8 +82,8 @@ void initLevel2() {
 void drawLevel2() {
     // === Draw Desert Terrain ===
     glPushMatrix();
-    glScalef(5.0f, 5.0f, 5.0f);
-    glTranslatef(0.0f, -17.0f, 0.0f);
+    glScalef(3.0f, 3.0f, 3.0f);
+    glTranslatef(0.0f, -14.0f, 0.0f);
    
     model_desert.Draw();
     glPopMatrix();
@@ -121,7 +125,7 @@ void animateLevel2Objects() {
             // Use the position from the coins array
             glTranslatef(coins[i].x, coins[i].y, coins[i].z);
             glRotatef(time * 0.1f, 0.0f, 1.0f, 0.0f); // Apply rotation
-            glScalef(3.0f, 3.0f, 3.0f); // Use the same scale as in drawLevel2
+            glScalef(2.5f, 2.5f, 2.5f); // Use the same scale as in drawLevel2
             model_coin.Draw();
             glPopMatrix();
         }
@@ -135,8 +139,8 @@ void animateLevel2Objects() {
             glPushMatrix();
             // ... (the rest of the rock animation code is fine) ...
             float scale = 1.0f + 0.1f * sin(time * 0.005f + i);
-            glTranslatef(rocks[i].x, rocks[i].y, rocks[i].z);
-            glScalef(scale * 3.0f, scale * 3.0f, scale * 3.0f);
+            glTranslatef(rocks[i].x, groundLevelY + 0.5f, rocks[i].z);
+            glScalef(scale * 0.03f, scale * 0.03f, scale * 0.03f);
             model_rock.Draw();
             glPopMatrix();
         }
@@ -148,11 +152,11 @@ void animateLevel2Objects() {
         // Only animate/draw the sign if it has NOT been destroyed.
         if (!signsDestroyed[i]) {
             glPushMatrix();
-            // ... (the rest of the sign animation code is fine) ...
+            
             float scale = 1.0f + 0.1f * sin(time * 0.005f + i + NUM_ROCKS);
-            glTranslatef(signs[i].x, signs[i].y, signs[i].z);
-            glRotatef(-90.0, 0.0f, 1.0f, 0.0f);
-            glScalef(scale * 3.0f, scale * 3.0f, scale * 3.0f);
+            glTranslatef(signs[i].x, groundLevelY + 7.0f , signs[i].z);
+            glRotatef(0.0, 0.0f, 1.0f, 0.0f);
+            glScalef(scale *0.3  , scale * 0.3, scale * 0.3);
             model_sign.Draw();
             glPopMatrix();
         }
