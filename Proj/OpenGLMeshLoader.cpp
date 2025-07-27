@@ -243,7 +243,7 @@ void updateLevel1Logic() {
         float dx = player.x - houses[i].x;
         float dz = player.z - houses[i].z;
         float distance = sqrt(dx * dx + dz * dz);
-        float collisionRadius = 6.0f; // The "size" of the player and rock combined
+        float collisionRadius = 4.0f; // The "size" of the player and rock combined
 
         if (distance < collisionRadius) {
             // A collision has occurred.
@@ -308,7 +308,7 @@ void updateLevel1Logic() {
 
 
     // === LEVEL TRANSITION ===
-    if (player.x > 75.0f) {
+    if (player.x > 75.0f && player.z > 75.0f) {
         player.x = 0.0f;
         player.z = 200.0f;
         currentLevel = LEVEL2;
