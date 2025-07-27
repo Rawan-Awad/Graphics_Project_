@@ -3,33 +3,123 @@
 #include "Model_3DS.h"
 #include "GLTexture.h"
 #include <glut.h>
+#include <cmath>
+#include <vector> 
+#include <stdlib.h> // Required for rand()
+#include <time.h> 
 
 
 static Model_3DS model_car;
-Model_3DS city;
-Model_3DS coffee;
-Model_3DS hotdog;
-Model_3DS fuel;
-Model_3DS nitro;
+Model_3DS model_house;
+Model_3DS model_coffee;
+Model_3DS model_nitro;
+Model_3DS lvl2Flag;
+Model_3DS tree;
 
 GLTexture tex_ground;
 GLTexture tex_sky;
 
-float rotationAngle = 0.0f;
+// — How many of each? —
+static const int NUM_HOUSES = 20;
+static const int NUM_COFFEE = 10;
+static const int NUM_TREES = 20; 
+static const int NUM_NITRO = 2;
 
+
+// — Position + state arrays —
+GameObject houses[NUM_HOUSES];
+GameObject trees[NUM_TREES];
+GameObject coffeePickups[NUM_COFFEE];
+GameObject nitroPickups[NUM_NITRO];
+
+// — Have we “collected” or “placed” them? —
+bool    housesDrawn[NUM_HOUSES];
+bool    treeDrawn[NUM_TREES];
+bool coffeeCollected[NUM_COFFEE];
+bool  nitroCollected[NUM_NITRO];
+
+// — Animation state (reuse your existing) —
+static float rotationAngle = 0.0f;
+
+void setUplvl1() {
+    srand(time(NULL));
+	
+    float minX = -100.0f, maxX = 100.0f;
+    float minZ = -100.0f, maxZ = 100.0f;
+
+    const float minDistance = 15.0f;
+
+    // 4) Temp list of all placements so far:
+    std::vector<GameObject> placed;
+    placed.reserve(NUM_HOUSES + NUM_TREES + NUM_COFFEE + NUM_NITRO);
+
+    // Helper lambda to try and place one object with distance checking:
+    auto placeOne = [&](GameObject& obj) {
+        bool ok = false;
+        while (!ok) {
+            float x = minX + float(std::rand()) / RAND_MAX * (maxX - minX);
+            float z = minZ + float(std::rand()) / RAND_MAX * (maxZ - minZ);
+            // check against all placed
+            ok = true;
+            for (auto& p : placed) {
+                float dx = x - p.x;
+                float dz = z - p.z;
+                if (std::sqrt(dx * dx + dz * dz) < minDistance) {
+                    ok = false;
+                    break;
+                }
+            }
+            if (ok) {
+                obj.x = x;
+                obj.z = z;
+                placed.push_back(obj);
+            }
+        }
+        };
+
+    // 5) Place Houses
+    for (int i = 0; i < NUM_HOUSES; ++i) {
+        houses[i].y = 0.0f;
+        // we set x/z inside placeOne
+        placeOne(houses[i]);
+        housesDrawn[i] = true;
+    }
+
+    // 6) Place Trees
+    for (int i = 0; i < NUM_TREES; ++i) {
+        trees[i].y = 0.0f;
+        placeOne(trees[i]);
+        treeDrawn[i] = true;
+    }
+
+    // 7) Place Coffee Pickups (hover Y = 1.0)
+    for (int i = 0; i < NUM_COFFEE; ++i) {
+        coffeePickups[i].y = 1.0f;
+        placeOne(coffeePickups[i]);
+        coffeeCollected[i] = false;
+    }
+
+    // 8) Place Nitro Pickups (hover Y = 1.0)
+    for (int i = 0; i < NUM_NITRO; ++i) {
+        nitroPickups[i].y = 1.0f;
+        placeOne(nitroPickups[i]);
+        nitroCollected[i] = false;
+    }
+}
 
 void initLevel1() {
-    model_car.Load("Models/car/_Subaru-Loyale.3ds");
-	city.Load("Models/City/city.3ds");
-	coffee.Load("Models/coffee/coffee.3ds");
-    hotdog.Load("Models/hotdog/hotdog.3ds");
-	fuel.Load("Models/fuelCan/fuelCan.3ds");
-	nitro.Load("Models/nitros/oxycan.3ds");
 
-    tex_ground.Load("textures/ground.bmp");  // uses your GLTexture::Load
-    tex_sky.Load("textures/blu-sky-3.bmp");
-    // Load city models, collectibles, layout
-    //model_car.Load("models/car/_Subaru-Loyale.3ds");
+	// Load models
+	model_coffee.Load("models/coffee/coffee.3ds");
+    model_car.Load("Models/car/_Subaru-Loyale.3ds");
+	model_nitro.Load("models/nitros/nitro.3DS");
+	model_house.Load("models/house/house.3ds");
+	lvl2Flag.Load("models/lvl2flag/lvl2Flag.3ds");
+	tree.Load("models/tree/Tree1.3ds");
+    tex_ground.Load("textures/ground.bmp");
+    tex_sky.Load("textures/sky.bmp");
+    setUplvl1();
+
 }
 
 void drawGroundTextured()
@@ -56,20 +146,116 @@ void drawGroundTextured()
 
 void drawLevel1() {
 
- 
+    drawGroundTextured();
+    for (int i = 0; i < NUM_HOUSES; ++i) {
+        if (housesDrawn[i]) {
+            glPushMatrix();
+            glTranslatef(houses[i].x, player.y, houses[i].z);
+            glScalef(1.0f, 1.0f, 1.0f);       // half‑size houses
+            glRotatef(90.f, 1, 0, 0);
+            model_house.Draw();
+            glPopMatrix();
+        }
+    }
+    for (int i = 0; i < NUM_TREES; ++i) {
+        if (treeDrawn[i]) {
+            glPushMatrix();
+            glTranslatef(trees[i].x, player.y, trees[i].z);
+            glScalef(0.5f, 0.5f, 0.5f);       // half‑size house
+            tree.Draw();
+            glPopMatrix();
+        }
+    }
+
+    for (int i = 0; i < NUM_COFFEE; ++i) {
+        if (!coffeeCollected[i]) {
+        glPushMatrix();
+        glTranslatef(coffeePickups[i].x, player.y, coffeePickups[i].z);
+        glScalef(1.0f, 1.0f, 1.0f);       // half‑size houses
+        model_coffee.Draw();
+        glPopMatrix();
+    }
+    }
+    for (int i = 0; i < NUM_NITRO; ++i) {
+        if (!nitroCollected[i]) {
+            glPushMatrix();
+            glTranslatef(nitroPickups[i].x, player.y, nitroPickups[i].z);
+            glScalef(100.0f, 100.0f, 100.0f);       // half‑size houses
+            model_nitro.Draw();
+            glPopMatrix();
+        }
+    }
+
 
     glPushMatrix();
-    glTranslatef(-30.0f, -0.8f, 0.0f);   // ↓ drop city
-    glScalef(0.5f, 0.5f, 0.5f);
-    city.Draw();
+    glTranslatef(75.0f, 0.0f,75.0f);
+    glScalef(2.0f, 2.0f, 2.0f);
+    lvl2Flag.Draw();
     glPopMatrix();
-    
 
     glPushMatrix();
-    glTranslatef(+30.0f, -0.8f, 0.0f);
-    glScalef(0.5f, 0.5f, 0.5f);
-    city.Draw();
+    glTranslatef(player.x, player.y, player.z);
+    glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
+    glScalef(1.0f, 1.0f, 1.0f);
+    model_car.Draw();
     glPopMatrix();
+
+
+
+    // Draw city, player, obstacles, pickups
+
+}
+
+void animateLevel1Objects() {
+    int timeMs = glutGet(GLUT_ELAPSED_TIME);
+    float seconds = timeMs * 0.001f;          // convert to seconds
+    float rotDeg = timeMs * 0.1f;            // your existing spin rate
+    float pulseSpeed = 2.0f;                  // cycles per second
+    float pulseAmp = 0.2f;
+
+    // === Animate ALL Rotating Coffee Pickups ===
+    for (int i = 0; i < NUM_COFFEE; ++i) {
+        if (coffeeCollected[i]) continue;
+
+        // Compute a per‑cup phase so they don't all pulse identically:
+        float phase = i * 0.5f;
+
+        // Sine‑wave scaling around 1.0
+        float scale = 1.0f + pulseAmp * sinf((seconds * pulseSpeed * 2.0f * 3.14159f) + phase);
+
+        glPushMatrix();
+        // 1) move to its position
+        glTranslatef(coffeePickups[i].x,
+            coffeePickups[i].y,
+            coffeePickups[i].z);
+
+        // 2) rotate around Y
+        glRotatef(rotDeg, 0.0f, 1.0f, 0.0f);
+
+        // 3) pulse scale
+        glScalef(scale, scale, scale);
+
+        // 4) draw
+        model_coffee.Draw();
+        glPopMatrix();
+    }
+
+    // === Animate ALL Rotating Nitro Pickups ===
+    /*for (int i = 0; i < NUM_NITRO; ++i) {
+        if (!nitroCollected[i]) {
+            glPushMatrix();
+            // Use the position from the nitroPickups array
+            glTranslatef(nitroPickups[i].x,
+                nitroPickups[i].y,
+                nitroPickups[i].z);
+            glRotatef(time * 0.1f, 0.0f, 1.0f, 0.0f);   // Same spin rate
+            // Match your nitro scale
+            glScalef(0.02f, 0.02f, 0.02f);
+            model_nitro.Draw();
+            glPopMatrix();
+        }
+    }*/
+
 
     glPushMatrix();
     glTranslatef(player.x, player.y, player.z);
@@ -79,48 +265,6 @@ void drawLevel1() {
     glPopMatrix();
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    drawGroundTextured();
-
-
-    animateLevel1Objects();
-
-
-
-    // Draw city, player, obstacles, pickups
-
-}
-
-void animateLevel1Objects() {
-
-    // Advance rotation each frame
-    rotationAngle += 1.0f;
-    if (rotationAngle > 360.f) rotationAngle -= 360.f;
-
-    // List of (model, X, Z, scale, phase‑offset)
-    struct Pickup { Model_3DS* m; float x, z, s, phase; };
-    Pickup pickups[] = {
-      { &hotdog, -2.0f,  2.0f, 0.03f, 0.0f },
-      { &coffee,  2.0f,  2.0f, 1.0f, 1.0f },
-      { &nitro,   2.0f, -2.0f, 0.02f, 2.0f },
-      { &fuel,   -2.0f, -2.0f, 0.02f, 3.0f },
-    };
-
-    const float baseY = 3.5f;  // float 2 units above ground
-    const float amplitude = 0.5f;   // 0.5 units of bob
-
-    for (auto& p : pickups) {
-        // Compute vertical bob: base + sine wave
-        float bob = sinf((rotationAngle * 0.05f + p.phase)) * amplitude;
-        float y = baseY + bob;
-
-        glPushMatrix();
-        glTranslatef(p.x, y, p.z);
-        glRotatef(rotationAngle, 0, 1, 0);
-        glScalef(p.s, p.s, p.s);
-        p.m->Draw();
-        glPopMatrix();
-    }
 }
 
 void initSounds() {

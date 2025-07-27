@@ -15,6 +15,10 @@ extern float obstacleX, obstacleZ;
 extern const int NUM_ROCKS;
 extern const int NUM_SIGNS;
 extern const int NUM_COINS;
+extern const int NUM_HOUSES;
+extern const int NUM_TREES;
+extern const int NUM_COFFEE;
+extern const int NUM_NITRO;
 extern float groundLevelY;
 
 // === PLAYER STRUCT ===
@@ -32,9 +36,17 @@ struct GameObject {
 extern GameObject coins[];
 extern GameObject rocks[];
 extern GameObject signs[];
+extern GameObject houses[];
+extern GameObject trees[];
+extern GameObject coffeePickups[];
+extern GameObject nitroPickups[];
 extern bool coinsCollected[];
 extern bool rocksDestroyed[];
 extern bool signsDestroyed[];
+extern bool housesDrawn[];
+extern bool treeDrawn[];
+extern bool coffeeCollected[];
+extern bool nitroCollected[];
 // === GLOBAL VARIABLES ===
 extern Player player;
 extern float moveSpeed;

@@ -199,50 +199,73 @@ void reshape(int w, int h) {
 
 // === LOGIC ===
 void updateLevel1Logic() {
-    // === FOOD COLLECTION === 
-    if (!foodCollected) {
-        float dx = player.x - foodX;
-        float dz = player.z - foodZ;
-        float dist = sqrt(dx * dx + dz * dz);
-        if (dist < 2.0f) {
-            player.stamina = min(player.stamina + 10, 100.0f);
-            playSound("chew");
-            foodCollected = true;
-        }
-    }
 
     // === DRINK COLLECTION ===
-    if (!drinkCollected) {
-        float dx = player.x - drinkX;
-        float dz = player.z - drinkZ;
-        float dist = sqrt(dx * dx + dz * dz);
-        if (dist < 2.0f) {
-            player.stamina = min(player.stamina + 15, 100.0f);
-            playSound("drink");
-            drinkCollected = true;
+    for (int i = 0; i < NUM_COFFEE; i++) {
+        // Check the new array
+        if (!coffeeCollected[i]) {
+            float dx = player.x - coffeePickups[i].x;
+            float dz = player.z - coffeePickups[i].z;
+            if (sqrt(dx * dx + dz * dz) < 2.0f) {
+                player.stamina += 10;
+                coffeeCollected[i] = true; // Update the new array
+                playSound("drink");
+            }
         }
     }
 
-    float dx2 = player.x - obstacleX;
-    float dz2 = player.z - obstacleZ;
-    float dist2 = sqrt(dx2 * dx2 + dz2 * dz2);
-    if (dist2 < 2.0f) {
-        player.stamina -= 1.0f;
-        playSound("car_crash");
-        if (player.stamina <= 0) {
-            player.x = 0;
-            player.z = 0;
-            player.stamina = 100;
+    for (int i = 0; i < NUM_HOUSES; i++) {
+        float dx = player.x - houses[i].x;
+        float dz = player.z - houses[i].z;
+        float distance = sqrt(dx * dx + dz * dz);
+        float collisionRadius = 8.0f; // The "size" of the player and rock combined
+
+        if (distance < collisionRadius) {
+            // A collision has occurred.
+            player.x -= 10; // A very small stamina penalty for the bump.
+            playSound("car_crash");
+
+            // --- Solid Collision Response ---
+            // Calculate how much the player has penetrated the obstacle.
+            float overlap = collisionRadius - distance;
+
+            // Push the player back along the vector from the obstacle's center
+            // to the player's center, just enough to resolve the overlap.
+            player.x += (dx / distance) * overlap;
+            player.z += (dz / distance) * overlap;
         }
     }
+    for (int i = 0; i < NUM_TREES; i++) {
+        float dx = player.x - trees[i].x;
+        float dz = player.z - trees[i].z;
+        float distance = sqrt(dx * dx + dz * dz);
+        float collisionRadius = 1.0f; // The "size" of the player and rock combined
 
+        if (distance < collisionRadius) {
+            // A collision has occurred.
+            player.x -= 10; // A very small stamina penalty for the bump.
+            playSound("car_crash");
+
+            // --- Solid Collision Response ---
+            // Calculate how much the player has penetrated the obstacle.
+            float overlap = collisionRadius - distance;
+
+            // Push the player back along the vector from the obstacle's center
+            // to the player's center, just enough to resolve the overlap.
+            player.x += (dx / distance) * overlap;
+            player.z += (dz / distance) * overlap;
+        }
+    }
+    
 
 
     // === LEVEL TRANSITION ===
-    if (player.x > 30.0f) {
+    if (player.x > 75.0f) {
+        player.x = 0.0f;
+        player.z = 200.0f;
         currentLevel = LEVEL2;
-        player.x = 0;
-        player.z = 0;
+		//player.stamina = 100; // Reset stamina for the new level
+        player.yaw = 0.0f;
         playSound("levelup");  // Optional: add level transition sound
     }
 }
@@ -502,7 +525,9 @@ void display() {
     glLoadIdentity();
     updateLighting();
     updateCamera();
-    if (currentLevel == LEVEL1) drawLevel1();
+    if (currentLevel == LEVEL1) { drawLevel1(); 
+	animateLevel1Objects(); // <-- ADD THIS CALL
+    }
     else {
         drawLevel2();
         animateLevel2Objects();

@@ -30,69 +30,27 @@ float groundLevelY = -10.0f;
 void setupLevel2Objects() {
     srand(time(NULL)); // Seed the random number generator
 
-    // --- 1. Define the Expanded Map Boundaries ---
-    // You've moved the player back, so let's make the world much bigger.
-    float minX = -50.0f;  // A wide but not excessive left/right range
+    // Define the boundaries for spawning objects.
+    // Adjust these values to fit the size of your desert terrain.
+    float minX = -50.0f;
     float maxX = 50.0f;
-    float minZ = 0.0f; // The far end of the map
-    float maxZ = 295.0f;   // The closest objects can get to the player's start
+    float minZ = -100.0f; // Start of the level
+    float maxZ = -10.0f;  // Near the finish line
 
-    // --- 2. Distance-Checked Spawning for Obstacles ---
-    std::vector<GameObject> placedObstacles; // A temporary list to track obstacle positions
-    float minDistance = 10.0f; // The minimum distance allowed between any two obstacles
-
-    // --- Generate positions for ROCKS ---
+    // --- Generate random positions for ROCKS ---
     for (int i = 0; i < NUM_ROCKS; i++) {
-        bool positionFound = false;
-        while (!positionFound) {
-            // a. Generate a potential random position
-            float potentialX = minX + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxX - minX)));
-            float potentialZ = minZ + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxZ - minZ)));
-
-            // b. Check its distance against all previously placed obstacles
-            bool isTooClose = false;
-            for (const auto& placed : placedObstacles) {
-                float dx = potentialX - placed.x;
-                float dz = potentialZ - placed.z;
-                if (sqrt(dx * dx + dz * dz) < minDistance) {
-                    isTooClose = true;
-                    break; // Found a conflict, no need to check further
-                }
-            }
-
-            // c. If it's not too close, accept the position
-            if (!isTooClose) {
-                rocks[i] = { potentialX, 0.5f, potentialZ };
-                placedObstacles.push_back(rocks[i]); // Add to our list of placed obstacles
-                positionFound = true;
-            }
-            // d. If it was too close, the while loop repeats, trying a new random spot
-        }
+        // rand() % 100 gives a number from 0-99. / 100.0f makes it 0.0-0.99.
+        // This formula scales and shifts the random number to fit our boundaries.
+        rocks[i].x = minX + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxX - minX)));
+        rocks[i].z = minZ + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxZ - minZ)));
+        rocks[i].y = 0.5f; // Keep them on the ground
     }
 
-    // --- Generate positions for SIGNS (using the same method) ---
+    // --- Generate random positions for SIGNS ---
     for (int i = 0; i < NUM_SIGNS; i++) {
-        bool positionFound = false;
-        while (!positionFound) {
-            float potentialX = minX + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxX - minX)));
-            float potentialZ = minZ + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxZ - minZ)));
-
-            bool isTooClose = false;
-            for (const auto& placed : placedObstacles) {
-                float dx = potentialX - placed.x;
-                float dz = potentialZ - placed.z;
-                if (sqrt(dx * dx + dz * dz) < minDistance) {
-                    isTooClose = true;
-                    break;
-                }
-            }
-
-            if (!isTooClose) {
-                signs[i] = { potentialX, 0.5f, potentialZ };
-                placedObstacles.push_back(signs[i]);
-                positionFound = true;
-            }
-        }
+        signs[i].x = minX + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxX - minX)));
+        signs[i].z = minZ + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxZ - minZ)));
+        signs[i].y = 0.5f;
     }
 
     // --- 3. Simple Random Spawning for COINS ---
@@ -100,7 +58,7 @@ void setupLevel2Objects() {
     for (int i = 0; i < NUM_COINS; i++) {
         coins[i].x = minX + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxX - minX)));
         coins[i].z = minZ + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (maxZ - minZ)));
-        coins[i].y = 1.0f; // Make coins hover
+        coins[i].y = 1.0f; // Make coins hover slightly
     }
 }
 
@@ -110,8 +68,8 @@ void initLevel2() {
     model_sign.Load("Models/StopSign/StopSign.3ds");      // Road sign obstacle
     model_rock.Load("Models/rock/Stone 4.3DS");
     model_desert.Load("Models/desert/uploads_files_4614960_Deasert+sell.3ds");
-    model_flag.Load("Models/flag3/uploads_files_2024783_Flag_v1_001.3DS");
-    model_coin.Load("Models/coin2/uploads_files_3504028_Coin.3ds");
+    model_flag.Load("Models/flag/lp_flag3ds.3DS");
+    model_coin.Load("Models/coin/uploads_files_4153932_Cartoon_Coin01_3ds.3ds");
     setupLevel2Objects();
     
 }
@@ -120,7 +78,7 @@ void initLevel2() {
 void drawLevel2() {
     // === Draw Desert Terrain ===
     glPushMatrix();
-    glScalef(3.0f, 3.0f, 3.0f);
+    glScalef(5.0f, 5.0f, 5.0f);
     glTranslatef(0.0f, -17.0f, 0.0f);
    
     model_desert.Draw();
@@ -128,7 +86,7 @@ void drawLevel2() {
 
     // === Draw Player Car ===
     glPushMatrix();
-    glTranslatef(player.x, groundLevelY + 0.5f, player.z);
+    glTranslatef(player.x, 0.5f, player.z);
     glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
     glScalef(1.0f, 1.0f, 1.0f);
     model_car.Draw();
@@ -136,7 +94,7 @@ void drawLevel2() {
 
     // === Draw Finish Line Flag ===
     glPushMatrix();
-    glTranslatef(0.0f, -40.0f, 0.0f);
+    glTranslatef(0.0f, 0.5f, -70.0f);
     glScalef(3.0f, 3.0f, 3.0f);
     model_flag.Draw();
     glPopMatrix();
@@ -161,7 +119,7 @@ void animateLevel2Objects() {
         if (!coinsCollected[i]) {
             glPushMatrix();
             // Use the position from the coins array
-            glTranslatef(coins[i].x, groundLevelY + 1.0f, coins[i].z);
+            glTranslatef(coins[i].x, coins[i].y, coins[i].z);
             glRotatef(time * 0.1f, 0.0f, 1.0f, 0.0f); // Apply rotation
             glScalef(3.0f, 3.0f, 3.0f); // Use the same scale as in drawLevel2
             model_coin.Draw();
@@ -177,7 +135,7 @@ void animateLevel2Objects() {
             glPushMatrix();
             // ... (the rest of the rock animation code is fine) ...
             float scale = 1.0f + 0.1f * sin(time * 0.005f + i);
-            glTranslatef(rocks[i].x, groundLevelY + 0.5f, rocks[i].z);
+            glTranslatef(rocks[i].x, rocks[i].y, rocks[i].z);
             glScalef(scale * 3.0f, scale * 3.0f, scale * 3.0f);
             model_rock.Draw();
             glPopMatrix();
@@ -192,7 +150,7 @@ void animateLevel2Objects() {
             glPushMatrix();
             // ... (the rest of the sign animation code is fine) ...
             float scale = 1.0f + 0.1f * sin(time * 0.005f + i + NUM_ROCKS);
-            glTranslatef(signs[i].x, groundLevelY + 0.5f, signs[i].z);
+            glTranslatef(signs[i].x, signs[i].y, signs[i].z);
             glRotatef(-90.0, 0.0f, 1.0f, 0.0f);
             glScalef(scale * 3.0f, scale * 3.0f, scale * 3.0f);
             model_sign.Draw();
@@ -206,28 +164,37 @@ void animateLevel2Objects() {
 
 void initLighting() {
     glEnable(GL_LIGHTING);
-    glEnable(GL_NORMALIZE);
+    glEnable(GL_NORMALIZE);  // Normalize normals for scaling
 
-    // === Sun (LIGHT0) initial config ===
-    glEnable(GL_LIGHT0);
+    // === Sun Light ===
+    glEnable(GL_LIGHT0);  // Use LIGHT0 for the sun
+
     GLfloat ambientSun[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-    GLfloat diffuseSun[] = { 0.5f, 0.5f, 0.45f, 1.0f };
-    GLfloat specularSun[] = { 0.4f, 0.4f, 0.4f, 1.0f };
+    GLfloat diffuseSun[] = { 0.5f, 0.5f, 0.45f, 1.0f }; // CHANGED from 0.8 to 0.5
+
+    // Reduce the specular highlight intensity as well.
+    GLfloat specularSun[] = { 0.4f, 0.4f, 0.4f, 1.0f }; // CHANGED from 0.7 to 0.4
+    GLfloat positionSun[] = { 0.0f, 100.0f, 0.0f, 0.0f }; // Directional light
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambientSun);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseSun);
     glLightfv(GL_LIGHT0, GL_SPECULAR, specularSun);
+    glLightfv(GL_LIGHT0, GL_POSITION, positionSun);
 
-    // === Headlights (LIGHT1) initial config ===
-    glEnable(GL_LIGHT1);
-    GLfloat ambientHL[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    GLfloat diffuseHL[] = { 1.0f, 1.0f, 0.8f, 1.0f };
-    GLfloat specularHL[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    // === Headlights ===
+    glEnable(GL_LIGHT1);  // Use LIGHT1 for headlights
+
+    GLfloat ambientHL[] = { 0.0f, 0.0f, 0.0f, 1.0f }; // No ambient from headlights
+    // Make the diffuse component very bright for the test
+    GLfloat diffuseHL[] = { 1.0f, 1.0f, 0.8f, 1.0f }; // VERY BRIGHT
+    GLfloat specularHL[] = { 1.0f, 1.0f, 1.0f, 1.0f }; // BRIGHT HIGHLIGHT
+
 
     glLightfv(GL_LIGHT1, GL_AMBIENT, ambientHL);
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseHL);
     glLightfv(GL_LIGHT1, GL_SPECULAR, specularHL);
-}
 
+    
+}
 
 
